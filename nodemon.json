@@ -1,0 +1,9 @@
+{
+  "restartable": "rs",
+  "verbose": false,
+  "ignore": [
+    ".git",
+    "node_modules",
+    "public"
+  ]
+}
