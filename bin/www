@@ -29,21 +29,14 @@ var server = http.createServer(app);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
-listenSocketIO(server);
-
+listenSocketIO();
 
 /**
  * Setup Socket.IO Listener
  */
 
-function listenSocketIO(server){
-  var sio=io.listen(server); //Create SocketIO Listener
-  sio.configure(function(){
-    sio.set('log level',0); //Verbose
-    sio.set('authorization',function (handshakeData,callback){
-      callback(null,true);
-    });
-  });
+function listenSocketIO(){
+  var sio=io.listen(server);
 
   //Called upon connection
   sio.sockets.on('connection', function (client) {
