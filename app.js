@@ -21,7 +21,8 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public'))); //Serve files from public
-app.use('/javascripts/game', express.static(path.join(__dirname, 'shared'))); //Serve files from shared into public javascript folder
+app.use('/javascripts/game', express.static(__dirname + '/shared')); //Serve files from shared into public javascript folder
+app.use('/javascripts/game', express.static(__dirname + '/client')); //Serve files from client into public javascript folder
 
 app.use('/', routes);
 app.use('/play', play);
