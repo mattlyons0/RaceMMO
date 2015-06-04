@@ -36,8 +36,12 @@ listenSocketIO();
  */
 
 function listenSocketIO(){
-  var sio=io.listen(server);
+  var sio=io(server);
 
+  sio.set('authorization', function (handshakeData, callback) {
+    // make sure the handshake data looks good
+    callback(null, true); // error first, 'authorized' boolean second
+  });
   //Called upon connection
   sio.sockets.on('connection', function (client) {
     client.userid = uuid(); //Generates UUID
