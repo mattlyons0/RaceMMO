@@ -3,5 +3,12 @@ extends layout
 
 block content
 	h1= title
-	p Welcome to #{title}
-	a(href='/play') Play #{title}
+	p Please Select Mode
+	a(href='/play') Play
+	|&nbsp
+	a(href='/play?debug') Debug
+	br
+	br
+
+	h2 Todo List
+	include ../Todo.html

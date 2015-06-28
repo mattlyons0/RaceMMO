@@ -4,6 +4,8 @@
   "ignore": [
     ".git",
     "node_modules",
-    "public"
+    "public",
+    ".html",
+    ".jade"
   ]
 }

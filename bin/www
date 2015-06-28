@@ -21,6 +21,7 @@ app.set('port', port);
  */
 
 var server = http.createServer(app);
+app.server = server;
 
 /**
  * Listen on provided port, on all network interfaces.
@@ -29,29 +30,55 @@ var server = http.createServer(app);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
-listenSocketIO();
 
+/*
+Setup Socket.io Server
+ */
+var sio = io(server);
+app.sio = sio;
+setupSocketIO(sio);
+
+/*
+Setup Game Server
+ */
+
+var gameServer = require('../server/gameServer');
+setupGameServer(gameServer);
+
+/**
+ * Setup Gameserver with the webserver and socket.io
+ * @param server gameserver instance to setup
+ */
+function setupGameServer(server) {
+  sio.sockets.on('connection', function (client) {
+    client.userID = uuid(); //Generates UUID
+    client.emit('onconnected', {id: client.userID}); //Tell player they are connected and give ID
+    debug(client.userID + ' connected');
+
+    //Connect them to a game lobby
+    server.findGame(client);
+
+    client.on('message', function (message) { //Forward messages to game server
+      server.onMessage(client, message);
+    });
+
+    //When client disconnects
+    client.on('disconnect', function () {
+      debug(client.userID + ' disconnected');
+      if(client.game && client.game.id) { //If the client was in a game, end that game
+        server.endGame(client.game.id, client.userID);
+      }
+    });
+  });
+}
 /**
  * Setup Socket.IO Listener
  */
 
-function listenSocketIO(){
-  var sio=io(server);
-
+function setupSocketIO(sio){
   sio.set('authorization', function (handshakeData, callback) {
     // make sure the handshake data looks good
     callback(null, true); // error first, 'authorized' boolean second
-  });
-  //Called upon connection
-  sio.sockets.on('connection', function (client) {
-    client.userid = uuid(); //Generates UUID
-    client.emit('onconnected', {id: client.userid}); //Tell player they are connected and give ID
-    console.log('socket.io:: player ' + client.userid + ' connected');
-
-    //When client disconnects
-    client.on('disconnect', function () {
-      console.log('socket.io:: client disconnected ' + client.userid);
-    });
   });
 }
 

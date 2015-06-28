@@ -4,6 +4,8 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var debug = require('debug')('RaceMMO:app');
+var error = require('debug')('RaceMMO:app:error');
 
 var routes = require('./routes/index');
 var play = require('./routes/play');
@@ -34,6 +36,27 @@ app.use(function(req, res, next) {
   next(err);
 });
 
+//Manage shutdown gracefully
+var shutdown=function() {
+  debug('Received shutdown request. Server is shutting down...');
+  app.sio.close();
+  debug('Socket.IO has shutdown.');
+  app.server.close(function () {
+    debug('Express has shutdown.');
+    process.exit();
+  });
+  setTimeout(function () {
+    error('Could not shutdown express in 30 seconds. Forcing shutdown.');
+    process.exit();
+  }, 30 * 1000);//If cannot shutdown after 30 seconds forcefully shutdown express
+};
+
+//Gracefully Shutdown upon receiving these signals
+//process.on('SIGTERM', shutdown);
+//process.on('SIGINT', shutdown);
+//process.on('SIGHUP', shutdown);
+//process.on('SIGQUIT', shutdown);
+
 // error handlers
 
 // development error handler
@@ -58,5 +81,8 @@ app.use(function(err, req, res, next) {
   });
 });
 
+//var repl = require("repl");
+//r = repl.start("node> ");
+//r.context.shutdown = shutdown;
 
 module.exports = app;
