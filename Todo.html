@@ -6,6 +6,8 @@
     <li>Fix netPing/netLatency when fake lag is changed by another client</li>
     <li>Fix netOffset always being 100</li>
     <li>Implement <a href="http://stackoverflow.com/questions/8541868/command-line-for-running-server">REPL</a> for admin server commands</li>
+    <li>Put GameServers on seperate thread from WebServer (use 'loadtest URL -c 500 --rps 500'to verify this)</li>
+    <li>Put Each Game Lobby on a Seperate Thread</li>
     <ul>
         <li>Migrate FakeLag from clientside to a serverside command</li>
     </ul>
@@ -15,4 +17,6 @@
 
     <li>Migrate to Variable PlayerCaps (Instead of 2)</li>
     <li>Scale Canvas to browser size</li>
+    <li>Adaptive 'clientSmooth' based on latency</li>
+    <li>Adaptive 'netOffset' (or update rate) based on server lag</li>
 </ul>
