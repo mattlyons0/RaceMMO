@@ -52,9 +52,7 @@ function setupTooBusy() {
   });
 }
 function setupCompression() {
-  app.use(compression({
-    memLevel: zlib.Z_DEFAULT_MEMLEVEL //Currently 8/10 RAM USAGE
-  })); //Compress pages using express' built in compression
+  app.use(compression()); //Compress pages using express' built in compression DEFAULTS TO 8/10 RAM USAGE
 
   if(app.get('env')==='devolopment') {
     app.use(minify( //Minify css and js
