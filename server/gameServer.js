@@ -1,4 +1,5 @@
 var gameServer = {games: {}, gameCount: 0};
+
 var uuid = require('node-uuid');
 var debugLib = require('debug');
 var debug=debugLib('RaceMMO:gameServer');
@@ -101,7 +102,8 @@ gameServer.createGame=function(player) {
     id: uuid(),
     playerHost: player,
     playerClient: null,
-    playerCount: 1
+    playerCount: 1,
+    playerCapacity: 2
   };
   this.games[game.id]=game; //Store game
   this.gameCount++;
@@ -179,7 +181,7 @@ gameServer.findGame=function(player) {
     for(var gameID in this.games) { //Check for game with slots
       if(!this.games.hasOwnProperty(gameID)) continue; //TODO
       var instance = this.games[gameID];
-      if(instance.playerCount<2) {
+      if(instance.playerCount<instance.playerCapacity) {
         found = true;
         instance.playerClient = player;
         instance.gameCore.players.other.instance = player;

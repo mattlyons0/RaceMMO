@@ -5,6 +5,8 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
+var compression = require('compression');
+var minify = require('express-minify');
 var debug = require('debug')('RaceMMO:app');
 var error = require('debug')('RaceMMO:app:error');
 
@@ -15,9 +17,10 @@ var app = express();
 
 setupJade();
 setupMorgan();
+setupCompression();
 setupTooBusy();
 setupPaths();
-setupErrorHandlers()
+setupErrorHandlers();
 
 function setupJade() {
   app.set('views', path.join(__dirname, 'views'));
@@ -47,6 +50,19 @@ function setupTooBusy() {
       next();
     }
   });
+}
+function setupCompression() {
+  app.use(compression({
+    memLevel: zlib.Z_DEFAULT_MEMLEVEL //Currently 8/10 RAM USAGE
+  })); //Compress pages using express' built in compression
+
+  if(app.get('env')==='devolopment') {
+    app.use(minify( //Minify css and js
+      {
+        cache: false //WARNING WILL CACHE IN RAM
+      }
+    ));
+  }
 }
 
 function setupErrorHandlers(){

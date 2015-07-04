@@ -11,7 +11,7 @@ window.onload=function() {
   game.viewport.height = game.world.height;
 
   game.ctx = game.viewport.getContext('2d'); //Fetch 2d rendering context
-  game.ctx.font = '11px "Helvetica"';
+  game.ctx.font = '12px "Helvetica"';
 
   game.update(new Date().getTime()); //Start the game loop
 };
