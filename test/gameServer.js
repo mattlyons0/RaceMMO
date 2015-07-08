@@ -15,7 +15,7 @@ describe('Game Server', function () {
     client.on('onconnected', function (uuid) {
       uuid.should.have.property('id');
       console.log('UUID: ' + uuid.id);
-      client.disconnect();fds
+      client.disconnect();
       done();
     });
   });
