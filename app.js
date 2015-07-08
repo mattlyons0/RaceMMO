@@ -21,6 +21,8 @@ setupCompression();
 setupTooBusy();
 setupPaths();
 setupErrorHandlers();
+if(typeof process === 'function') //Don't crash when running mocha
+  process.on('SIGINT', shutdown); //Gracefully Shutdown
 
 function setupJade() {
   app.set('views', path.join(__dirname, 'views'));
@@ -134,9 +136,6 @@ var shutdown=function() {
     process.exit();
   }, 30 * 1000);//If cannot shutdown after 30 seconds forcefully shutdown
 };
-
-//Gracefully Shutdown upon receiving these signals
-process.on('SIGINT', shutdown);
 
 //var repl = require("repl");
 //r = repl.start("node> ");
