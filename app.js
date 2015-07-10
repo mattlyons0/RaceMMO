@@ -17,8 +17,8 @@ var app = express();
 
 setupJade();
 setupMorgan();
-setupCompression();
 setupTooBusy();
+setupCompression();
 setupPaths();
 setupErrorHandlers();
 if(typeof process === 'function') //Don't crash when running mocha

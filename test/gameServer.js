@@ -1,9 +1,14 @@
-var should = require('should');
+/**
+ * Basic Gameserver Mechanics
+ * Tests bin/www.js setupGameServer() and server/gameServer.js
+ */
+
+require('should');
 var io = require('socket.io-client');
-var debug = require('debug')('RaceMMO:test:gameServer')
+var debug = require('debug')('RaceMMO:test:gameServer');
 var port = 1234;
 process.env.PORT = port;
-var app = require('../bin/www'); //Start Server on port 1234 just for the tests
+require('../bin/www'); //Start Server on port 1234 just for the tests
 
 var socketURL = 'http://localhost:' + port;
 var options = {
@@ -72,7 +77,15 @@ describe('Game Server', function () {
 
 	});
 
-
+  it('should respond to ping messages', function (done) {
+    var client1 = connect();
+    logMessages([{client: client1, expected: 2}], "message", function () {
+      client1.messages[1].should.startWith("s.p.");
+      client1.disconnect();
+      done();
+    });
+    client1.send('p.0'); //Send a fake ping message to the server
+  });
 });
 
 /**
