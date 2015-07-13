@@ -39,8 +39,7 @@ describe('Game Core Client', function () {
     var oldpdt = game._pdt;
     setTimeout(function () {
       game._pdt.should.not.equal(oldpdt); //Physics delta being changed
-      game.players.self.currentState.pos.x.should.equal(oldStatePos.x); //We didn't give any input so position should stay same
-      game.players.self.currentState.pos.y.should.equal(oldStatePos.y);
+      game.players.self.currentState.pos.should.eql(oldStatePos); //We didn't give any input so position should stay same
       game.players.self.stateTime.should.not.equal(oldStateTime); //Check time is being updated
 
       //Simulate Keypress to test physics vector
@@ -57,8 +56,7 @@ describe('Game Core Client', function () {
 
           simulateKeypress(game, ['l','r']);
           setTimeout(function(){
-            game.players.self.currentState.pos.x.should.equal(game.players.self.oldState.pos.x);
-            game.players.self.currentState.pos.y.should.equal(game.players.self.oldState.pos.y);
+            game.players.self.currentState.pos.should.eql(game.players.self.oldState.pos);
 
             simulateKeypress(game, ['u']);
             setTimeout(function(){
@@ -164,21 +162,62 @@ describe('Game Core Client', function () {
       playerClient = game.players.self.host ? game.players.other : game.players.self;
 
       if(notMoved==true) {
-        data.hp.x.should.equal(playerHost.pos.x);
-        data.hp.y.should.equal(playerHost.pos.y);
-        data.cp.x.should.equal(playerClient.pos.x);
-        data.cp.y.should.equal(playerClient.pos.y);
+        data.hp.should.eql(playerHost.pos);;
+        data.cp.should.eql(playerClient.pos);
         playerHost.pos.x = 100;
       }
       else{
         data.hp.x.should.equal(100);
         data.hp.y.should.equal(playerHost.pos.y);
-        data.cp.x.should.equal(playerClient.pos.x);
-        data.cp.y.should.equal(playerClient.pos.y);
+        data.cp.should.eql(playerClient.pos);
       }
       done();
     })
   });
+
+  it('should not allow players outside of the world', function (done) {
+    var clone = function (obj) {
+      var posL = obj.posLimits, pos = obj.pos;
+      return {
+        pos: {x: pos.x, y: pos.y},
+        posLimits: {yMax: posL.yMax, yMin: posL.yMin, xMax: posL.xMax, xMin: posL.xMin}
+      };
+    };
+    var item = game.players.self;
+    var maxY = item.posLimits.yMax, minY = item.posLimits.yMin, minX = item.posLimits.xMin, maxX = item.posLimits.xMax;
+
+
+    item.pos.x = maxX - 0.0001;
+    var cloneI = clone(item);
+    game.checkCollision(cloneI);
+    debug(item.pos.x + " " + cloneI.pos.x);
+    item.pos.x.should.equal(cloneI.pos.x);
+    item.pos.y.should.equal(cloneI.pos.y);
+
+    item.pos.x = maxX;
+    item.pos.y = maxY;
+    cloneI = clone(item);
+    game.checkCollision(cloneI);
+    cloneI.pos.x.should.equal(item.pos.x);
+    cloneI.pos.y.should.equal(item.pos.y);
+
+    item.pos.x = minX;
+    item.pos.y = minY;
+    cloneI = clone(item);
+    game.checkCollision(cloneI);
+    cloneI.pos.x.should.equal(item.pos.x);
+    cloneI.pos.y.should.equal(item.pos.y);
+
+    item.pos.x = minX - 10;
+    item.pos.y = maxY + 10;
+    cloneI = clone(item);
+    game.checkCollision(cloneI);
+    cloneI.pos.x.should.equal(minX);
+    cloneI.pos.y.should.equal(maxY);
+
+    done();
+  });
+
 });
 
 function simulateKeypress(game,key) {

@@ -41,6 +41,7 @@ function setupMorgan() {
   }
 }
 function setupTooBusy() {
+  toobusy.maxLag(100); //Seems to get rid of 503's at startup
   //Block requests when server is overloaded
   app.use(function (req, res, next) {
     if (toobusy()) {
