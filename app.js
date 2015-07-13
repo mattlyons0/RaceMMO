@@ -56,7 +56,7 @@ function setupTooBusy() {
 function setupCompression() {
   app.use(compression()); //Compress pages using express' built in compression DEFAULTS TO 8/10 RAM USAGE
 
-  if(app.get('env')==='devolopment') {
+  if(app.get('env')!=='development') {
     app.use(minify( //Minify css and js
       {
         cache: false //WARNING WILL CACHE IN RAM
@@ -136,7 +136,6 @@ var shutdown=function() {
     process.exit();
   }, 30 * 1000);//If cannot shutdown after 30 seconds forcefully shutdown
 };
-
 //var repl = require("repl");
 //r = repl.start("node> ");
 //r.context.shutdown = shutdown;

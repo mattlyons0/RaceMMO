@@ -4,44 +4,57 @@
  * Handles Update Loop
  * Handles Animation when running on Client
  */
-
+var fakeClient = false; //Will be set to true if we are faking being a client on the server for tests
+var onServer = function () {
+  if (!fakeClient && 'undefined' != typeof(global)) //check if we are on the server and are not pretending to be a client
+    return true;
+  return false;
+};
 var frameTime = 60 / 1000; //Run client game logic at 60hz
-if('undefined' != typeof(global)) frameTime = 45; //global is defined if used on server, run at 22hz on server
 
 /**
  * Main update loop runs on requestAnimationFrame, which will fallback to a setTimout loop on the server
  */
-( function (window) {
+var setupTiming = function (window) {
   var lastTime = 0;
   var vendors = ['ms', 'moz', 'webkit', 'o'];
 
-  for(var x=0;x<vendors.length&&!window.requestAnimationFrame; ++x) {
+  for (var x = 0; x < vendors.length && !window.requestAnimationFrame; ++x) {
     window.requestAnimationFrame = window[vendors[x] + 'RequestAnimationFrame'];
     window.cancelAnimationFrame = window[vendors[x] + 'CancelAnimationFrame'] ||
-      window[vendors[x]+'CancelRequestAnimationFrame'];
+      window[vendors[x] + 'CancelRequestAnimationFrame'];
   }
 
-  if(!window.requestAnimationFrame) {
-    window.requestAnimationFrame=function(callback,element) {
+  if (!window.requestAnimationFrame) {
+    window.requestAnimationFrame = function (callback, element) {
       var currentTime = Date.now();
       var timeToCall = Math.max(0, frameTime - (currentTime - lastTime));
-      var id = window.setTimeout(function () { callback(currentTime + timeToCall) }, timeToCall);
+      var id = window.setTimeout(function () {
+        callback(currentTime + timeToCall)
+      }, timeToCall);
       lastTime = currentTime + timeToCall;
       return id;
     };
   }
-  if(!window.cancelAnimationFrame) {
-    window.cancelAnimationFrame=function(id){
-      clearTimeout(id);}
+  if (!window.cancelAnimationFrame) {
+    window.cancelAnimationFrame = function (id) {
+      clearTimeout(id);
+    }
   }
-})(typeof window == "undefined" ? global : window); //TODO check if this works correctly on clientside
+};
 
 /**
  * Main game class
  * Created on both client and server
  * @param gameInstance instance of game to run logic on
+ * @param clientFake boolean if this is a fake instance of a client (ex for testing)
  */
-var gameCore=function(gameInstance) {
+var gameCore=function(gameInstance,clientFake) {
+  if(clientFake===true) fakeClient = true;
+
+  if(onServer()) frameTime = 45; //run at 22hz on server
+  setupTiming(typeof window == "undefined" ? global : window); //Create timing mechanism that works both serverside and clientside
+
   this.instance = gameInstance;
   this.server=this.instance !== undefined; //Store if we are the server
   this.world = {width: 720, height: 480};
@@ -92,13 +105,17 @@ var gameCore=function(gameInstance) {
 
   //ClientSide Only Init
   if(!this.server) {
-    this.keyboard = new THREEx.KeyboardState(); //Keyboard Handler
+    if(!fakeClient)
+      this.keyboard = new THREEx.KeyboardState(); //Keyboard Handler
     this.clientCreateConfiguration(); //Create Default Settings for client
     this.serverUpdates = []; //List of recent server updates so we can interpolate
     this.clientConnectToServer(); //Connect to the socket.io server
     this.clientCreatePingTimer(); //Start pinging server and determine latency
-    this.color = localStorage.getItem('color') || '#cc8822'; //Get color from localStorage or use default
-    localStorage.setItem('color', this.color);
+    this.color = '#cc8822';
+    if(!fakeClient) {
+      this.color = localStorage.getItem('color') || '#cc8822'; //Get color from localStorage or use default
+      localStorage.setItem('color', this.color);
+    }
     this.players.self.color = this.color; //Set Players color
 
     //Make debug gui if requested
@@ -208,10 +225,11 @@ var gamePlayer=function(gameInstance,playerInstance) {
   //Setup State
   this.pos = {x: 0, y: 0};
   this.size = {x: 16, y: 16, hx: 8, hy: 8}; //x,y,heightX,heightY
-  this.state = 'notConnected';
+  this.state = 'not-connected';
   this.color = 'rgba(255,255,255,0.1)';
   this.infoColor = 'rgba(255,255,255,0.1)';
   this.id = ''; //Will be assigned later
+  this.online = false;
 
   //Movement
   this.oldState = {pos: {x: 0, y: 0}};
@@ -240,6 +258,7 @@ var gamePlayer=function(gameInstance,playerInstance) {
  *
  */
 gamePlayer.prototype.draw=function() {
+  if(fakeClient) return;
   //Draw Player Rectangle
   game.ctx.fillStyle = this.color;
   game.ctx.fillRect(this.pos.x - this.size.hx, this.pos.y - this.size.hy, this.size.x, this.size.y);
@@ -258,7 +277,7 @@ COMMON FUNCTIONS
  * @param t current time
  */
 gameCore.prototype.update=function(t) {
-  this.dt = this.lastFrameTime ? ( (t - this.lastFrameTime) / 1000.0).fixed() : 0.016; //Calculate Delta Time
+  this.dt = this.lastFrameTime ? ((t - this.lastFrameTime) / 1000.0).fixed() : 0.016; //Calculate Delta Time
   this.lastFrameTime = t;
   if(!this.server) { //If we arent the server, update the client, otherwise update the server
     this.clientUpdate();
@@ -631,8 +650,10 @@ gameCore.prototype.clientUpdatePhysics=function() {
  *  Draw, Input, Physics
  */
 gameCore.prototype.clientUpdate=function() {
-  this.ctx.clearRect(0, 0, 720, 480);
-  this.clientDrawInfo();
+  if(!fakeClient) {
+    this.ctx.clearRect(0, 0, 720, 480);
+    this.clientDrawInfo();
+  }
   this.clientHandleInput();
   if(!this.naiveApproach) {
     this.clientProcessNetUpdates();
@@ -677,7 +698,7 @@ gameCore.prototype.clientCreatePingTimer=function() {
   setInterval(function () {
     this.lastPingTime = new Date().getTime() - this.fakeLag;
     this.socket.send('p.' + (this.lastPingTime)); //'p' for ping
-  }.bind(this, 1000));
+  }.bind(this), 1000);
 };
 /**
  * Setup Client Configuration
@@ -904,7 +925,10 @@ gameCore.prototype.clientOnDisconnect=function(data) {
  * Handle Connecting to the server
  */
 gameCore.prototype.clientConnectToServer=function() {
-  this.socket = io.connect();
+  if(fakeClient)
+    this.socket = require('../test/testUtils').connect();
+  else
+    this.socket = io.connect();
 
   this.socket.on('connect', function () {
     this.players.self.state = 'connecting'; //We are not 'connected' until we have a server ID and we are placed in a server
