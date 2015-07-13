@@ -514,7 +514,6 @@ gameCore.prototype.clientProcessNetPredictionCorrection=function() {
       this.players.self.lastInputSeq = lastInputSeqIndex;
       //Reapply all inputs that the server hasn't yet confirmed to 'keep' our position the same while confirming the server position
       this.clientUpdatePhysics();
-      this.clientUpdateLocalPosition();
     }
   }
 };
@@ -637,6 +636,9 @@ gameCore.prototype.clientUpdateLocalPosition=function() {
  * Calculate Physics clientside
  */
 gameCore.prototype.clientUpdatePhysics=function() {
+  this.clientHandleInput();
+  this.clientUpdateLocalPosition();
+
   if(this.clientPredict) {
     //Fetch the direction from input buffer and use it to smooth visuals
     this.players.self.oldState.pos = this.pos(this.players.self.currentState.pos);
@@ -654,7 +656,6 @@ gameCore.prototype.clientUpdate=function() {
     this.ctx.clearRect(0, 0, 720, 480);
     this.clientDrawInfo();
   }
-  this.clientHandleInput();
   if(!this.naiveApproach) {
     this.clientProcessNetUpdates();
   }
@@ -754,7 +755,7 @@ gameCore.prototype.clientCreateDebugGui=function() {
   var _otherSettings = this.gui.addFolder('Methods');
   _otherSettings.add(this, 'naiveApproach').listen();
   _otherSettings.add(this, 'clientSmoothing').listen();
-  _otherSettings.add(this, 'clientSmooth').min(0).listen();
+  _otherSettings.add(this, 'clientSmooth').min(1).listen();
   _otherSettings.add(this, 'clientPredict').listen();
 
   var _debugSettings = this.gui.addFolder('Debug View');
