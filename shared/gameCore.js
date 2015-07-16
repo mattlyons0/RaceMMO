@@ -448,21 +448,23 @@ gameCore.prototype.clientHandleInput=function() {
   var input = [];
   this.clientHasInput = false;
 
-  if(this.keyboard.pressed('A') || this.keyboard.pressed('left')) {
-    xDir = -1;
-    input.push('l');
-  }
-  if(this.keyboard.pressed('D') || this.keyboard.pressed('right')) {
-    xDir = 1;
-    input.push('r');
-  }
-  if(this.keyboard.pressed('S') || this.keyboard.pressed('down')) {
-    yDir = 1;
-    input.push('d');
-  }
-  if(this.keyboard.pressed('W') || this.keyboard.pressed('up')) {
-    yDir = -1;
-    input.push('u');
+  if(this.keyboard) { //Skip this during tests if it is undefined
+    if (this.keyboard.pressed('A') || this.keyboard.pressed('left')) {
+      xDir = -1;
+      input.push('l');
+    }
+    if (this.keyboard.pressed('D') || this.keyboard.pressed('right')) {
+      xDir = 1;
+      input.push('r');
+    }
+    if (this.keyboard.pressed('S') || this.keyboard.pressed('down')) {
+      yDir = 1;
+      input.push('d');
+    }
+    if (this.keyboard.pressed('W') || this.keyboard.pressed('up')) {
+      yDir = -1;
+      input.push('u');
+    }
   }
 
   if(input.length) {
