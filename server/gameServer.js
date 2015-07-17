@@ -1,4 +1,4 @@
-var gameServer = {games: {}, gameCount: 0};
+var gameServer = {games: {}, gameCount: 0, recentGame: undefined};
 
 var uuid = require('node-uuid');
 var debugLib = require('debug');
@@ -106,6 +106,7 @@ gameServer.createGame=function(player) {
     playerCapacity: 2
   };
   this.games[game.id]=game; //Store game
+  this.games.recentGame = game;
   this.gameCount++;
 
   //Create core instance for this game

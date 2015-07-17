@@ -90,7 +90,7 @@ var gameCore=function(gameInstance,clientFake) {
     this.ghosts.serverPosOther.pos = {x: 500, y: 200};
   }
 
-  this.playerSpeed = 120; //Movespeed
+  this.playerSpeed = 109; //Movespeed (used 66 times per second)
   //Setup Physics Vars
   this._pdt = 0.0001; //Physics delta time
   this._pdte = new Date().getTime(); //Physics last delta time
@@ -359,7 +359,7 @@ gameCore.prototype.processInput=function(player) {
 gameCore.prototype.physicsMovementVectorFromDirection=function(x,y) {
   //Must be fixed step at physics sync speed
   return {
-    x: (x*(this.playerSpeed*0.015)).fixed(3),
+    x: (x*(this.playerSpeed*0.015)).fixed(3), //0.015=1/66 (1 / input poll time (physics update time))
     y: (y*(this.playerSpeed*0.015)).fixed(3)
   };
 };
@@ -405,6 +405,9 @@ gameCore.prototype.serverUpdatePhysics=function() {
  */
 gameCore.prototype.serverUpdate=function() {
   this.serverTime = this.localTime; //Update our clock to match timer
+  //if(this.lastState.his===this.players.self.lastInputSeq&&this.lastState.cis===this.players.other.lastInputSeq) {
+  //  return; //Disables sending same state multiple times, but also causes state match bugs, so I'll comment it until its needed
+  //}
   this.lastState = { //Snapshot current state for updating clients
     hp: this.players.self.pos, //Host Pos
     cp: this.players.other.pos, //Client Pos
@@ -440,13 +443,18 @@ CLIENTSIDE FUNCTIONS
 /**
  * Handle input clientside
  *  Parse Input and send to server
+ *  @param manualInput manually input an array (optionally)
  *  @returns {*} Movement Vector from resulting input
  */
-gameCore.prototype.clientHandleInput=function() {
+gameCore.prototype.clientHandleInput=function(manualInput) {
   var xDir = 0;
   var yDir = 0;
   var input = [];
-  this.clientHasInput = false;
+  if(manualInput){
+    manualInput.forEach(function (val) {
+      input.push(val);
+    });
+  }
 
   if(this.keyboard) { //Skip this during tests if it is undefined
     if (this.keyboard.pressed('A') || this.keyboard.pressed('left')) {
