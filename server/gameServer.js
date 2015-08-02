@@ -7,7 +7,7 @@ var error=debugLib('RaceMMO:gameServer:error');
 require('../shared/gameCore'); //Import Game Core
 
 
-global.window = global.document = global; //TODO figure out what this is
+global.window = global.document = global;
 
 //Initialize Server Vars
 gameServer.fakeLag = 0;
@@ -56,20 +56,22 @@ gameServer.onMessage=function(client,message) {
 gameServer._onMessage=function(client,message) {
   var messageParts = message.split('.');
   var messageType = messageParts[0];
-  //Other client is either host or client
-  var otherClient = (client.game.playerHost.userID == client.userID) ? client.game.playerClient : client.game.playerHost;
-
   //Parse Message Type
   switch (messageType) {
     case 'i': //Input
       this.onInput(client, messageParts);
       break;
-    case 'p': //Ping TODO
+    case 'p': //Ping
       client.send('s.p.' + messageParts[1]);
       break;
     case 'c': //Color change
-      if(otherClient)
-        otherClient.send('s.c.' + messageParts[1]);
+      //debug(client.game);
+      var players = client.game.gameCore.players;
+      for(var key in players){ //Send all clients that a client changed color
+        if(players.hasOwnProperty(key) && key!==client.userID){
+          players[key].instance.send('s.c.' + messageParts[1]+'.'+client.userID); //Send which client changed color as message part index 3
+        }
+      }
       break;
     case 'l': //Lag simulation request
       this.fakeLag = parseFloat(messageParts[1]); //Given in MS
@@ -100,11 +102,12 @@ gameServer.onInput=function(client,parts) {
 gameServer.createGame=function(player) {
   var game = {
     id: uuid(),
-    playerHost: player,
-    playerClient: null,
-    playerCount: 1,
-    playerCapacity: 2
+    players: [],
+    playerCount: 0,
+    playerCapacity: 3
   };
+  game.players[player.userID] = player;
+  //game.playerCount++; //TODO figure out why this is called twice upon creation when this isnt commented
   this.games[game.id]=game; //Store game
   this.games.recentGame = game;
   this.gameCount++;
@@ -117,7 +120,6 @@ gameServer.createGame=function(player) {
   player.send('s.h.' + String(game.gameCore.localTime).replace('.', '-'));
   debug('Server host at ' + game.gameCore.localTime);
   player.game = game;
-  player.hosting = true;
   debug('player: ' + player.userID + ' created game with id ' + player.game.id);
 
   return game;
@@ -132,19 +134,10 @@ gameServer.endGame=function(gameID,userID) {
   var game = this.games[gameID];
   if(game) {
     game.gameCore.stopUpdate(); //Stop game updates
-    if(game.playerCount>1) { //If there are 2 players, one is leaving
-      if(userID==game.playerHost.userID) { //If the host left tell the other client the game is over
-        if(game.playerClient) {
-          game.playerClient.send('s.e'); //Notify client game has ended
-          this.findGame(game.playerClient); //Look for/make a new game for that player
-        }
-      }
-      else { //We are host and the only player
-        if(game.playerHost) { //Tell the client the game is over
-          game.playerHost.send('s.e'); //Tell them this game is ending
-          game.playerHost.hosting = false; //No longer host since game is over
-          this.findGame(game.playerHost); //Find them a new game
-        }
+    for(var key in game.players){ //Notify all players in server the game has ended
+      if(game.players.hasOwnProperty(key)){
+        game.players[key].send('s.e'); //Notify client game has ended
+        this.findGame(game.players[key]); //Look for/make a new game for that player
       }
     }
     delete this.games[gameID]; //Remove this game from the list of games
@@ -159,34 +152,52 @@ gameServer.endGame=function(gameID,userID) {
 /**
  * A game has been created and has 2 players, thus this is called
  * @param game game to start
+ * @depreciated no longer used, as games don't start with two people anymore
  */
 gameServer.startGame=function(game) {
-  game.playerClient.send('s.j.' + game.playerHost.userID); //tell client he is joining a game hosted by someone
-  game.playerClient.game = game;
-
-  game.playerClient.send('s.r.' + String(game.gameCore.localTime).replace('.', '-')); //reset positions of both players
-  game.playerHost.send('s.r.' + String(game.gameCore.localTime).replace('.', '-'));
-
+  for(var key in game.players){ //reset positions of both players
+    debug('gameServer.startGame is depreciated');
+    if(game.players.hasOwnProperty(key)){
+      game.players[key].send('s.r.' + String(game.gameCore.localTime).replace('.', '-')+'.'+game.id);
+    }
+  }
   game.active=true;
 };
+/**
+ * Handle client disconnection
+ * @param client client which disconnected
+ */
+gameServer.onDisconnect = function (client) {
+  if (client.game && client.game.id) { //If the client was in a game, remove them from that game's instance
+    delete client.game.players[client.userID];
+    client.game.playerCount--;
 
+    if (client.game.playerCount <= 0) {
+      this.endGame(client.game.id, client.userID);
+      debug('Ended game ' + client.game.id);
+    }
+
+  }
+};
 /**
  * Find a game for given player
  * @param player player to find a slot for
  */
 gameServer.findGame=function(player) {
   debug('Looking for game. Currently: ' + this.gameCount);
-
   if(this.gameCount) { //There are active games
     var found = false;
     for(var gameID in this.games) { //Check for game with slots
-      if(!this.games.hasOwnProperty(gameID)) continue; //TODO
+      if(!this.games.hasOwnProperty(gameID)) continue;
       var instance = this.games[gameID];
       if(instance.playerCount<instance.playerCapacity) {
         found = true;
-        instance.playerClient = player;
-        instance.gameCore.players.other.instance = player;
+        instance.players[player.userID] = player;
+        instance.gameCore.createNewPlayer(player);
         instance.playerCount++;
+
+        player.send('s.j.' +instance.gameCore.players); //tell client he is joining a game and he isn't the first one
+        player.game = instance;
 
         this.startGame(instance);
       }
@@ -199,6 +210,5 @@ gameServer.findGame=function(player) {
     this.createGame(player); //No games currently
   }
 };
-
 
 module.exports = gameServer;

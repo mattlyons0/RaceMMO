@@ -24,55 +24,57 @@ describe('Game Core Client', function () {
     game.playerSpeed.should.be.above(0); //Positive
     game.should.have.property('serverUpdates');
     game.should.have.property('socket');
-    game.players.self.should.have.property('pos');
-    game.players.self.id.should.equal('');
-    game.players.self.state.should.equal('not-connected');
-    game.players.self.online.should.equal(false);
+    var self = game.players[game.socket.userID];
+    self.should.have.property('pos');
+    self.id.should.equal('');
+    self.state.should.equal('not-connected');
+    self.online.should.equal(false);
 
     done();
   });
 
+  //TODO fix failing test due to initial position not being told over network correctly
   it('should update physics (and process input) properly', function (done) { //Tests createPhysicsSimulation
     setTimeout(function () { //Pass initial setup
       game._pdt.should.be.above(0);
-      var oldStateTime = game.players.self.stateTime;
-      var oldStatePos = game.players.self.currentState.pos;
+      var oldStateTime = game.players[game.socket.userID].stateTime;
+      var oldStatePos = game.players[game.socket.userID].currentState.pos;
       var oldpdt = game._pdte;
       setTimeout(function () {
         game._pdte.should.not.equal(oldpdt); //Physics delta being changed
-        game.players.self.currentState.pos.should.eql(oldStatePos); //We didn't give any input so position should stay same
-        game.players.self.stateTime.should.not.equal(oldStateTime); //Check time is being updated
+        game.players[game.socket.userID].currentState.pos.should.eql(oldStatePos); //We didn't give any input so position should stay same
+        game.players[game.socket.userID].stateTime.should.not.equal(oldStateTime); //Check time is being updated
 
-        oldStatePos = game.players.self.oldState.pos;
+        oldStatePos = game.players[game.socket.userID].oldState.pos;
         //Simulate Keypress to test physics vector
         simulateKeypress(game, ['r']);
         setTimeout(function () {
-          game.players.self.currentState.pos.x.should.equal(oldStatePos.x + (game.playerSpeed * 0.015).fixed(3));
-          game.players.self.currentState.pos.y.should.equal(oldStatePos.y);
+          game.players[game.socket.userID].currentState.pos.x.should.equal(oldStatePos.x + (game.playerSpeed * 0.015).fixed(3));
+          game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y);
 
-          oldStatePos = game.players.self.oldState.pos;
+          oldStatePos = game.players[game.socket.userID].oldState.pos;
           simulateKeypress(game, ['l', 'l']);
           setTimeout(function () {
 
-            game.players.self.currentState.pos.x.should.equal((oldStatePos.x - ((game.playerSpeed * 0.015) * 2)).fixed(3));
-            game.players.self.currentState.pos.y.should.equal(oldStatePos.y);
+            game.players[game.socket.userID].currentState.pos.x.should.equal((oldStatePos.x - ((game.playerSpeed * 0.015) * 2)).fixed(3));
+            game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y);
 
-            oldStatePos = game.players.self.oldState.pos;
+            oldStatePos = game.players[game.socket.userID].oldState.pos;
             simulateKeypress(game, ['l', 'r']);
             setTimeout(function () {
-              game.players.self.currentState.pos.should.eql(oldStatePos);
+              game.players[game.socket.userID].currentState.pos.should.eql(oldStatePos);
 
-              oldStatePos = game.players.self.oldState.pos;
+              oldStatePos = game.players[game.socket.userID].oldState.pos;
               simulateKeypress(game, ['u']);
               setTimeout(function () {
-                game.players.self.currentState.pos.x.should.equal(oldStatePos.x);
-                game.players.self.currentState.pos.y.should.equal(oldStatePos.y - (game.playerSpeed * 0.015).fixed(3));
+                game.players[game.socket.userID].currentState.pos.x.should.equal(oldStatePos.x);
+                game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y - (game.playerSpeed * 0.015).fixed(3));
 
-                oldStatePos = game.players.self.oldState.pos;
+                oldStatePos = game.players[game.socket.userID].oldState.pos;
                 simulateKeypress(game, ['d']);
                 setTimeout(function () {
-                  game.players.self.currentState.pos.x.should.equal(oldStatePos.x);
-                  game.players.self.currentState.pos.y.should.equal(oldStatePos.y + (game.playerSpeed * 0.015).fixed(3));
+                  game.players[game.socket.userID].currentState.pos.x.should.equal(oldStatePos.x);
+                  game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y + (game.playerSpeed * 0.015).fixed(3));
 
                   done();
                 }, 35);
@@ -114,8 +116,8 @@ describe('Game Core Client', function () {
       return false;
     };
     setTimeout(function () {
-      game.players.self.currentState.pos.x.should.equal(game.players.self.oldState.pos.x - (game.playerSpeed * 0.015).fixed(3));
-      game.players.self.currentState.pos.y.should.equal(game.players.self.oldState.pos.y);
+      game.players[game.socket.userID].currentState.pos.x.should.equal(game.players[game.socket.userID].oldState.pos.x - (game.playerSpeed * 0.015).fixed(3));
+      game.players[game.socket.userID].currentState.pos.y.should.equal(game.players[game.socket.userID].oldState.pos.y);
 
       done();
     }, 15);
@@ -123,9 +125,9 @@ describe('Game Core Client', function () {
 
   it('should record client connection data correctly', function (done) {
     game.socket.on('onconnected', function (msg) {
-      msg.id.should.equal(game.players.self.id);
-      game.players.self.state.should.equal('connected');
-      game.players.self.online.should.equal(true);
+      msg.id.should.equal(game.players[game.socket.userID].id);
+      game.players[game.socket.userID].state.should.equal('connected');
+      game.players[game.socket.userID].online.should.equal(true);
 
       done();
     });
@@ -134,8 +136,8 @@ describe('Game Core Client', function () {
   it('should disconnect client correctly', function (done) {
     game.socket.on('onconnected', function () {
       game.socket.on('disconnect', function () {
-        game.players.self.state.should.equal('not-connected');
-        game.players.self.online.should.equal(false);
+        game.players[game.socket.userID].state.should.equal('not-connected');
+        game.players[game.socket.userID].online.should.equal(false);
         done();
       });
       game.socket.disconnect();
@@ -152,32 +154,49 @@ describe('Game Core Client', function () {
         done();
       }
     });
-    game.players.self.color = '#000000';
-    game.socket.send('c.'+game.players.self.color);
+    game.players[game.socket.userID].color = '#000000';
+    game.socket.send('c.'+game.players[game.socket.userID].color);
   });
 
   it('should process server updates correctly',function(done) {
-    var playerHost = game.players.self.host ? game.players.self : game.players.other;
-    var playerClient = game.players.self.host ? game.players.other : game.players.self;
-    var firstUpdate = true;
-    var notMoved=true;
-    game.socket.on('onserverupdate',function(data) {
-      if(firstUpdate===true){firstUpdate=false; return;}
-      playerHost = game.players.self.host ? game.players.self : game.players.other;
-      playerClient = game.players.self.host ? game.players.other : game.players.self;
+    var player1 = game.socket.userID;
+    var player2 = new gameCore(undefined,true);
 
-      if(notMoved==true) {
-        data.hp.should.eql(playerHost.pos);;
-        data.cp.should.eql(playerClient.pos);
-        playerHost.pos.x = 100;
+    var firstUpdate = true;
+    var test1 = false, test2 = false;
+    game.socket.on('onserverupdate', function (data) {
+      if (firstUpdate === true) {
+        firstUpdate = false;
+        return;
       }
-      else{
-        data.hp.x.should.equal(100);
-        data.hp.y.should.equal(playerHost.pos.y);
-        data.cp.should.eql(playerClient.pos);
+      for (var i = 0; i < data.pl.length; i++) {
+        var player = data.pl[i];
+        if (player.id === player1) {
+          player.pos.should.eql(game.players[player1].pos);
+        }
+        else if (player.id === player2.id) {
+          player.pos.should.eql(player2.pos);
+        }
       }
-      done();
-    })
+      test1 = true;
+      if(test2===true) {
+        player2.socket.disconnect();
+        done();
+      }
+    });
+
+    //Test converting into an associative array from socketIO regular array
+    setTimeout(function () {
+      player1=game.socket.userID;
+      var update=game.serverUpdates[game.serverUpdates.length-1]; //Get most recent update
+      update.pl[player1].should.have.property('pos');
+      update.pl[player2.socket.userID].should.have.property('pos');
+      test2 = true;
+      if(test1===true) {
+        player2.socket.disconnect();
+        done();
+      }
+    }, 45); //Wait for server tick
   });
 
   it('should not allow players outside of the world', function (done) {
@@ -188,7 +207,7 @@ describe('Game Core Client', function () {
         posLimits: {yMax: posL.yMax, yMin: posL.yMin, xMax: posL.xMax, xMin: posL.xMin}
       };
     };
-    var item = game.players.self;
+    var item = game.players[game.socket.userID];
     var maxY = item.posLimits.yMax, minY = item.posLimits.yMin, minX = item.posLimits.xMin, maxX = item.posLimits.xMax;
 
 
@@ -228,19 +247,20 @@ describe('Game Core Client', function () {
     var game2 = new gameCore(undefined, true);
     var client2 = game2.socket;
     simulateKeypress(game2, ['u', 'r', 'r', 'r']);
-    var ghostPos = game.ghosts.posOther.pos;
     setTimeout(function () {
-      var target = game.serverUpdates[1];
-      var previous = game.serverUpdates[0];
+      var target = game.serverUpdates[game.serverUpdates.length-1];
+      var previous = game.serverUpdates[game.serverUpdates.length-2];
 
+      debug(target);
+      debug(client2.userID);
       //Linear interpolation between the last 2 server updates for the other client (the non host)
-      game.ghosts.posOther.pos.should.eql(game.vLerp(previous.cp, target.cp, ((game.targetTime - game.clientTime) / (target.t - previous.t)).fixed(3)));
-      game.players.other.pos.should.eql(game.vLerp(game.players.other.pos, game.ghosts.posOther.pos, game._pdt * game.clientSmooth));
+      game.ghosts.posOther[client2.userID].pos.should.eql(game.vLerp(previous.pl[client2.userID].pos, target.pl[client2.userID].pos, ((game.targetTime - game.clientTime) / (target.t - previous.t)).fixed(3)));
+      game.players[client2.userID].pos.should.eql(game.vLerp(game.players[client2.userID].pos, game.ghosts.posOther[client2.userID].pos, game._pdt * game.clientSmooth));
       //Client smoothing
 
       client2.disconnect();
       done();
-    }, 20);
+    }, 100);
   })
 
 });
@@ -252,7 +272,14 @@ describe('Game Core Server', function () {
       var core = game.gameCore;
       core.instance.should.eql(game);
       core.server.should.equal(true);
-      core.players.self.instance.should.equal(game.playerHost);
+      var userID;
+      for(var player in game.players){
+        if(game.players.hasOwnProperty(player)){
+          userID = player;
+          break;
+        }
+      }
+      core.players[userID].instance.should.equal(game.players[userID]);
 
       client.disconnect();
       done();
@@ -280,22 +307,22 @@ describe('Game Core Server', function () {
       var core = app.gameServer.games.recentGame.gameCore;
       setTimeout(function () { //First Physics Tick
         simulateKeypress(game, ['d']);
-        var oldState = core.players.self.pos;
+        var oldState = core.players[game.socket.userID].pos;
         setTimeout(function () {
-          core.players.self.pos.x.should.equal(oldState.x);
-          core.players.self.pos.y.should.equal(oldState.y + (game.playerSpeed * 0.015).fixed(3));
+          core.players[game.socket.userID].pos.x.should.equal(oldState.x);
+          core.players[game.socket.userID].pos.y.should.equal(oldState.y + (game.playerSpeed * 0.015).fixed(3));
 
-          oldState = core.players.self.pos;
+          oldState = core.players[game.socket.userID].pos;
           simulateKeypress(game, ['l']);
           setTimeout(function () {
-            core.players.self.pos.x.should.equal(oldState.x - (game.playerSpeed * 0.015).fixed(3));
-            core.players.self.pos.y.should.equal(oldState.y);
+            core.players[game.socket.userID].pos.x.should.equal(oldState.x - (game.playerSpeed * 0.015).fixed(3));
+            core.players[game.socket.userID].pos.y.should.equal(oldState.y);
 
-            oldState = core.players.self.pos;
+            oldState = core.players[game.socket.userID].pos;
             simulateKeypress(game, ['u', 'l', 'd', 'r']); //Shouldn't move after this sequence
             setTimeout(function () {
-              core.players.self.pos.x.should.equal(oldState.x);
-              core.players.self.pos.y.should.equal(oldState.y);
+              core.players[game.socket.userID].pos.x.should.equal(oldState.x);
+              core.players[game.socket.userID].pos.y.should.equal(oldState.y);
 
               game.socket.disconnect();
               done();
@@ -325,15 +352,32 @@ describe('Game Core Server', function () {
     var isDone = false;
     utils.connect(function (client) {
       var core = app.gameServer.games.recentGame.gameCore;
+      var called = false;
       client.on('onserverupdate', function (update) {
-        update.hp.should.eql(core.players.self.pos);
-        update.cp.should.eql(core.players.other.pos);
+        if(called===true) return;
+        called = true;
+        update.pl.length.should.equal(1);
+        var id;
+        for(var player in core.players){
+          if(core.players.hasOwnProperty(player)){
+            id = player;
+            break;
+          }
+        }
+        update.pl[0].pos.should.eql(core.players[player].pos);
         update.t.should.be.approximately(core.serverTime,0.25); //Should be within a quarter of a second of eachother (there should be little/no latency)
 
         var client2 = utils.connect();
         client2.on('onserverupdate', function (msg) {
-          update.hp.should.eql(core.players.self.pos);
-          update.cp.should.eql(core.players.other.pos);
+          for(var i=0;i<msg.pl.length;i++){
+            var player=msg.pl[i];
+            if(player.id===id){
+              player.pos.should.eql(core.players[player.id].pos);
+            }
+            else if(player.id===client2.userID){
+              update.pos.should.eql(core.players[client2.userID].pos);
+            }
+          }
           update.t.should.be.below(core.serverTime); //Since we are within 2 closures core is now cached
 
           client.disconnect();
@@ -347,7 +391,13 @@ describe('Game Core Server', function () {
         done();
         clearInterval(interval);
       }
-    }, 50);
+    }, 25);
+  });
+
+  it('should handle server disconnection and reconnection properly', function (done) {
+    debug('Error: Not Yet Written');
+    "".should.not.exist();
+    //TODO write test
   });
 });
 

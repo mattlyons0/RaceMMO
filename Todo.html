@@ -1,36 +1,48 @@
 <ul>
-    <h3>Short Term</h3>
-
-    <li>Migrate states to <a href="http://stackoverflow.com/questions/287903/enums-in-javascript">enums</a></li>
-    <li>Fix netPing/netLatency when fake lag is changed by another client</li>
-    <li>Fix netOffset always being 100</li>
-    <li>Implement <a href="http://stackoverflow.com/questions/8541868/command-line-for-running-server">REPL</a> for admin server commands</li>
+    <h2>Bugs</h2>
     <ul>
-        <li>Migrate FakeLag from clientside to a serverside command</li>
+        <li>Update other players states, (stop showing not-connected for all players)</li>
+        <li>Fix crash on players disconnecting from other players (614 undef)</li>
     </ul>
-    <li>Use ESLint</li>
-    <li>Handle when javascript files fail to load on game page (or when javascript is disabled)</li>
-    <li>Fix random 503 on javascript files with 214 that seems to be related to either compression or minimization (too busy is catching files that are being compressed I would guess)</li>
 
-
-    <h3>Long Term</h3>
-
-    <li>Migrate to Variable PlayerCaps (Instead of 2)</li>
-    <li>Migrate to Pixi.js</li>
-    <li>Scale Canvas to browser size</li>
-    <li>Adaptive 'clientSmooth' based on latency</li>
-    <li>Adaptive 'netOffset' (or update rate) based on server lag</li>
-    <li>Create system to use minified javascript for production</li>
-    <li>Test Express Server</li>
-    <li>Assets: <a href="https://www.reddit.com/r/gamedev/comments/3cjgun/spritestiles_to_create_a_topdown_racing_game/">link</a></li>
-    <li>Stop sending state updates every millisecond</li>
-
-    <h3>Possible Additions (if needed)</h3>
-
-    <li>Multiple <a href="http://socket.io/docs/using-multiple-nodes/">SocketIO Nodes</a></li>
+    <h2>Features</h2>
     <ul>
-        <li>Use one module for the express server and a socketio node to hand over to the game node,
-            then use another module for the actual game (thus making them completely independant, so the webserver can't take down the gameserver</li>
-    </ul>
-    <li>Separate GameServer from Webserver</li>
+        <h3>Short Term</h3>
+
+        <li>Remove States (and replace with attribs)</li>
+        <li>Fix netPing/netLatency when fake lag is changed by another client</li>
+        <li>Fix netOffset always being 100</li>
+        <li>Implement <a href="http://stackoverflow.com/questions/8541868/command-line-for-running-server">REPL</a> for admin server commands</li>
+        <ul>
+            <li>Migrate FakeLag from clientside to a serverside command</li>
+        </ul>
+        <li>Use ESLint</li>
+        <li>Handle when javascript files fail to load on game page (or when javascript is disabled)</li>
+        <li>Fix random 503 on javascript files with 214 that seems to be related to either compression or minimization (too busy is catching files that are being compressed I would guess)</li>
+
+
+        <h3>Long Term</h3>
+
+        <li>Migrate to Pixi.js</li>
+        <li>Scale Canvas to browser size</li>
+        <li>Adaptive 'clientSmooth' based on latency</li>
+        <li>Adaptive 'netOffset' (or update rate) based on server lag</li>
+        <li>Test Express Server</li>
+        <li>Assets: <a href="https://www.reddit.com/r/gamedev/comments/3cjgun/spritestiles_to_create_a_topdown_racing_game/">link</a></li>
+        <li>Stop sending state updates every millisecond</li>
+        <li><a href="https://coderwall.com/p/5cv5lg/generate-your-changelogs-with-git-log">Auto Generate Changelogs from git</a>
+            after <a href="http://stackoverflow.com/questions/16864259/how-to-run-bash-script-after-git-push">each commit</a></li>
+        <li><a href="http://www.gamasutra.com/blogs/GustavoMaciel/20131229/207833/Generating_Procedural_Racetracks.php">Procedural Racetracks</a></li>
+        <li>Bezier Curves <a href="http://www.sitepoint.com/html5-canvas-draw-bezier-curves/">(Ex1)</a> <a href="http://mathworld.wolfram.com/BezierCurve.html">(Ex2)</a></li>
+
+        <h3>Possible Additions (if needed)</h3>
+
+        <li>Multiple <a href="http://socket.io/docs/using-multiple-nodes/">SocketIO Nodes</a></li>
+        <ul>
+            <li>Use one module for the express server and a socketio node to hand over to the game node,
+                then use another module for the actual game (thus making them completely independant, so the webserver can't take down the gameserver</li>
+        </ul>
+        <li>Separate GameServer from Webserver</li>
+        <li><a href="http://buildnewgames.com/optimizing-websockets-bandwidth/">Optimize Websocket Bandwidth</a></li>
+        </ul>
 </ul>

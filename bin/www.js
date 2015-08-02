@@ -63,12 +63,9 @@ function setupGameServer(server) {
       server.onMessage(client, message);
     });
 
-    //When client disconnects
-    client.on('disconnect', function () {
+    client.on('disconnect', function () { //Forward disconnects to Server
       debug(client.userID + ' disconnected');
-      if(client.game && client.game.id) { //If the client was in a game, end that game
-        server.endGame(client.game.id, client.userID);
-      }
+      server.onDisconnect(client);
     });
   });
 }

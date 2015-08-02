@@ -1,3 +1,4 @@
+var debug = require('debug')('RaceMMO:test:testUtils')
 var io = require('socket.io-client');
 var options = {
   transports: ['websocket'],

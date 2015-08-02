@@ -44,32 +44,6 @@ describe('Game Server', function () {
 		});
 	});
 
-	it("should handle player disconnection properly", function (done) {
-    utils.connect(function (client1) {
-			var client2 = utils.connect();
-      utils.logMessages([{client: client1, expected: 4}], "message", function () {
-				client1.messages[2].should.startWith("s.e");
-				client1.disconnect();
-        utils.connect(hostDisconnectTest);
-			});
-			client2.disconnect();
-		});
-
-
-		var hostDisconnectTest = function (client1) {
-			var client2 = utils.connect();
-			client2.on('connect', function () {
-				client1.disconnect();
-			});
-      utils.logMessages([{client: client2, expected: 4}], "message", function () {
-				client2.messages[2].should.startWith("s.e");
-				client2.disconnect();
-				done();
-			});
-		};
-
-	});
-
   it('should respond to ping messages', function (done) {
     var client1 = utils.connect();
     utils.logMessages([{client: client1, expected: 2}], "message", function () {
@@ -77,6 +51,19 @@ describe('Game Server', function () {
       client1.disconnect();
       done();
     });
-    client1.send('p.0'); //Send a fake ping message to the server
+		setTimeout(function () {
+			client1.send('p.0'); //Send a fake ping message to the server
+		}, 5);
   });
+
+	it('should talk between 3 players correctly', function (done) {
+		debug('TEST NOT WRITTEN');
+		"".should.not.exist();
+		//TODO write test
+	});
+	it('should not match more than a the player limit in a server', function(done){
+		debug('TEST NOT WRITTEN');
+		"".should.not.exist();
+		//TODO write test
+	})
 });
