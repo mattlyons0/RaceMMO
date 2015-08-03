@@ -65,8 +65,6 @@ var gameCore=function(gameInstance,clientFake) {
       if(this.instance.players.hasOwnProperty(key)){
         console.log('adding player ' + key);
         this.createNewPlayer(this.instance.players[key]);
-        this.players[key].pos = {x: 20, y: 20}; //TODO change this once I get it working
-        //console.log(this.players);
       }
     }
   }
@@ -106,9 +104,8 @@ var gameCore=function(gameInstance,clientFake) {
     this.serverUpdates = []; //List of recent server updates so we can interpolate
     this.clientConnectToServer(); //Connect to the socket.io server
     this.clientCreatePingTimer(); //Start pinging server and determine latency
-    this.color = '#cc8822';
     if(!fakeClient) {
-      this.color = localStorage.getItem('color') || '#cc8822'; //Get color from localStorage or use default
+      this.color = localStorage.getItem('color') || this.randomColor(); //Get color from localStorage or use random color
       localStorage.setItem('color', this.color);
     }
     this.players[this.socket.userID].color = this.color; //Set Players color
@@ -185,7 +182,7 @@ gameCore.prototype.stopUpdate = function () {
   window.cancelAnimationFrame(this.updateID);
 };
 /**
- * Simple linear interpolation TODO find out what this does
+ * Simple linear interpolation
  * @param p
  * @param n
  * @param t
@@ -197,7 +194,7 @@ gameCore.prototype.lerp=function(p,n,t) {
   return (p + _t * (n - p)).fixed();
 };
 /**
- * Simple linear interpolation between 2 vectors TODO find out what this does
+ * Simple linear interpolation between 2 vectors
  * @param v
  * @param tv
  * @param t
@@ -236,10 +233,10 @@ var gamePlayer=function(gameInstance,playerInstance) {
   this.pos = {x: 0, y: 0};
   this.size = {x: 16, y: 16, hx: 8, hy: 8}; //x,y,heightX,heightY
   this.state = 'not-connected';
-  this.color = 'rgba(255,255,255,0.1)';
-  this.infoColor = 'rgba(255,255,255,0.1)';
   this.id = ''; //Will be assigned later
   this.online = false;
+  if(playerInstance)
+    this.online = true;
 
   //Movement
   this.oldState = {pos: {x: 0, y: 0}};
@@ -255,13 +252,7 @@ var gamePlayer=function(gameInstance,playerInstance) {
     yMin: this.size.hy,
     yMax: this.game.world.height - this.size.hy
   };
-
-  if(playerInstance) { //If host top left corner
-    this.pos = {x: 20, y: 20};
-  }
-  else { //Other player bottom right
-    this.pos = {x: 500, y: 200};
-  }
+  this.pos = {x: 0, y: 0}; //Need to update this later
 };
 
 /**
@@ -270,10 +261,15 @@ var gamePlayer=function(gameInstance,playerInstance) {
 gamePlayer.prototype.draw=function() {
   if(fakeClient) return;
   //Draw Player Rectangle
-  game.ctx.fillStyle = this.color;
+  game.ctx.fillStyle = 'rgba(255,255,255,0.1)'; //Draw grey if online is false
+  if(this.online===true)
+    game.ctx.fillStyle = this.color;
+  if(this.id===this.game.socket.userID)
+    game.ctx.fillStyle = this.game.color;
   game.ctx.fillRect(this.pos.x - this.size.hx, this.pos.y - this.size.hy, this.size.x, this.size.y);
   //Draw Player Status
-  game.ctx.fillStyle=this.infoColor;
+  if(this.online===true)
+    game.ctx.fillStyle=this.infoColor;
   game.ctx.fillText(this.state, this.pos.x + 10, this.pos.y + 4);
 };
 
@@ -383,23 +379,60 @@ gameCore.prototype.updatePhysics=function() {
     this.clientUpdatePhysics();
   }
 };
-
-gameCore.prototype.createNewPlayer=function(playerInstance){
-  if(this.server){
+/**
+ * Add new player to local version of the server
+ * @param playerInstance instance of player (only userID field is used for clientside)
+ */
+gameCore.prototype.createNewPlayer = function (playerInstance) {
+  if(this.players[playerInstance.userID]){
+    console.warn('Tried to create a player that already existed! ' + playerInstance.userID);
+    return;
+  }
+  if (this.server) {
     this.serverCreateNewPlayer(playerInstance);
   }
   else {
     this.clientCreateNewPlayer(playerInstance.userID);
   }
   console.log('Created player ' + playerInstance.userID);
-}
+};
+/**
+ * Remove player from local version of server
+ * @param playerInstance instance of player (only userID field is used)
+ */
+gameCore.prototype.removePlayer=function(playerInstance) {
+  if(this.server){
+    this.serverRemovePlayer(playerInstance);
+  }
+  else {
+    this.clientRemovePlayer(playerInstance.userID);
+  }
+  console.log('Removed player ' + playerInstance.userID);
+};
 
 /*
 SERVER FUNCTIONS
   Functions specifically for serverSide only
  */
+/**
+ * Create player instance for server logic
+ * @param player instance of player
+ */
 gameCore.prototype.serverCreateNewPlayer=function(player) {
   this.players[player.userID]=new gamePlayer(this, player);
+  var playerObj = this.players[player.userID];
+  playerObj.pos=
+  { //Generate random starting positions for each player
+    x: this.randomInt(playerObj.posLimits.xMin, playerObj.posLimits.xMax),
+      y: this.randomInt(playerObj.posLimits.yMin, playerObj.posLimits.yMax)
+  };
+};
+/**
+ * Remove player instance from server logic
+ * @param player instance of player
+ */
+gameCore.prototype.serverRemovePlayer = function (player) {
+  delete this.players[player.userID];
 };
 /**
  * Updated every 15ms, simulates world state
@@ -549,7 +582,7 @@ gameCore.prototype.clientProcessNetPredictionCorrection=function() {
         break;
       }
     }
-    if(lastInputSeqIndex!=-1) { //Server acknowleges that our inputs were accepted
+    if(lastInputSeqIndex!=-1) { //Server acknowledges that our inputs were accepted
       var numberToClear = Math.abs(lastInputSeqIndex - (-1)); //Clear inputs we confirmed are on server
       this.players[this.socket.userID].inputs.splice(0, numberToClear);
       this.players[this.socket.userID].currentState.pos = this.pos(myServerPos); //We know we are at this position because the server confirmed it
@@ -563,7 +596,6 @@ gameCore.prototype.clientProcessNetPredictionCorrection=function() {
 };
 /**
  * Process updates from the server
- * TODO FIX BEING BROKEN
  */
 gameCore.prototype.clientProcessNetUpdates=function() {
   if(!this.serverUpdates.length) return; //Nothing to do if there are no updates
@@ -611,7 +643,11 @@ gameCore.prototype.clientProcessNetUpdates=function() {
     var latestServerData = this.serverUpdates[this.serverUpdates.length - 1]; //Most Recent Server Update
     for(var id in this.players){
       if(this.players.hasOwnProperty(id)&&id!==this.socket.userID){ //Process everyone other than current client
-        var otherServerPos=latestServerData.pl[id].pos; //The exact server positions, used for the ghost TODO handle latestServerData.pl[id] being undefined during disconnect and reconnect
+        if(!latestServerData.pl[id]){ //We don't exist in the server update, maybe because we recently disconnected and reconnected
+          console.warn('Player not in server update!');
+          continue;
+        }
+        var otherServerPos=latestServerData.pl[id].pos; //The exact server positions, used for the ghost
         var otherTargetPos = target.pl[id] ? target.pl[id].pos:undefined; //If player exists in these server states, use their position. If not undefined will be correctly handled below
         var otherPastPos = previous.pl[id] ? previous.pl[id].pos:undefined;
 
@@ -635,7 +671,7 @@ gameCore.prototype.clientProcessNetUpdates=function() {
     //Called if we aren't predicting client movement, update position of current client from server
     if(!this.clientPredict && !this.naiveApproach) {
       var myServerPos = latestServerData.pl[this.socket.userID].pos;
-      var myTargetPos = target[this.socket.userID].pos; //TODO fix crash on this line with target[this.socket.userID] being undef
+      var myTargetPos = target[this.socket.userID].pos;
       //Why would we not exist in the future?
       var myPastPos = previous[this.socket.userID].pos;
 
@@ -655,8 +691,6 @@ gameCore.prototype.clientProcessNetUpdates=function() {
  * @param data update packet received from the server
  */
 gameCore.prototype.clientOnServerUpdateReceived=function(data) {
-  var thisPlayer = this.players[this.socket.userID];
-
   this.serverTime = data.t; //Server time (can be used to calc latency)
   this.clientTime = this.serverTime - (this.netOffset / 1000); //Latency Offset
 
@@ -664,11 +698,12 @@ gameCore.prototype.clientOnServerUpdateReceived=function(data) {
   for(var x=0;x<data.pl.length;x++){
     pl[data.pl[x].id] = {pos: data.pl[x].pos, is: data.pl[x].is};
     if(!this.players[data.pl[x].id]) { //New player since last update
-      console.warn('Missed adding player! Extra player detected!');
-      this.createNewPlayer({userID: data.pl[x].id});
+      console.warn('Extra player on server! '+data.pl[x].id);
     }
   }
-
+  if(this.serverUpdates.length===0){ //Upon first tick, update position from server
+    this.players[this.socket.userID].currentState.pos = this.pos(pl[this.socket.userID].pos);
+  }
   if(this.naiveApproach) {
     for(var key in this.players) {
       if(this.players.hasOwnProperty(key)){
@@ -866,77 +901,19 @@ gameCore.prototype.clientCreateDebugGui=function() {
   _netSettings.open();
 };
 /**
- * Reset the positions of clients
- */
-gameCore.prototype.clientResetPositions = function () {
-  for(var key in this.players) {
-    if(this.players.hasOwnProperty(key)){
-      var player = this.players[key];
-      player.pos = { //Generate random starting positions for each player
-        //x: this.randomInt(player.posLimits.xMin, player.posLimits.xMax),
-        //y: this.randomInt(player.posLimits.yMin, player.posLimits.yMax)
-        x: 20, y:20
-      };
-
-      if(key===this.socket.userID) { //We are the current player
-        player.oldState.pos = this.pos(player.pos);
-        player.pos = this.pos(player.pos);
-        player.currentState.pos = this.pos(player.pos);
-        this.ghosts.serverPosSelf.pos = this.pos(player.pos);
-      }
-      else{ //Not current player
-        this.ghosts.serverPosOther[key].pos = this.pos(player.pos);
-        this.ghosts.posOther[key].pos = this.pos(player.pos);
-      }
-    }
-  }
-};
-/**
- * Handle connection when the game is ready to start
- * @param data Parsed Data from Server
- */
-gameCore.prototype.clientOnReadyGame=function(data,serverID) {
-  var serverTime = parseFloat(data.replace('-', '.'));
-  this.instance = {id: serverID};
-
-  this.localTime = serverTime + this.netLatency;
-  console.log('Server Time: ' + this.localTime);
-
-  for(var key in this.players){
-    if(this.players.hasOwnProperty(key)){
-      this.players[key].infoColor = "#2288cc";//Everyones infocolor is blue
-      this.players[key].state = 'localPos';
-    }
-  }
-
-  this.players[this.socket.userID].state = 'YOU ' + this.players[this.socket.userID].state;
-
-  this.socket.send('c.' + this.players[this.socket.userID].color); //Sync Colors 'c' for color
-};
-/**
- * Handle Joining Game
+ * Handle Current Client Joining a Game
  * @param data  Parsed Data from Server
  */
-gameCore.prototype.clientOnJoinGame=function(data) {
+gameCore.prototype.clientOnJoinGame=function(gameID,gameTime) {
   var self = this.players[this.socket.userID];
-  self.state = 'connected.joined.waiting';
   self.infoColor = '#00bb00';
+  self.color = this.color;
 
-  this.clientResetPositions();
-};
-/**
- * Server says we are hosting the game
- * @param data  Parsed Data from Server
- */
-gameCore.prototype.clientOnHostGame=function(data) {
-  var serverTime = parseFloat(data.replace('-', '.'));
-  var localTime = serverTime + this.netLatency; //Estimate current time on server
-  var self = this.players[this.socket.userID];
+  this.instance = {id: gameID};
 
-  self.state = 'hosting.waiting for a player';
-  self.infoColor = '#cc0000';
-
-  this.clientResetPositions();
+  var serverTime = parseFloat(gameTime.replace('-', '.'));
+  this.localTime = serverTime + this.netLatency;
+  this.socket.send('c.' + self.color);
 };
 /**
  * Server gave us a game
@@ -946,18 +923,25 @@ gameCore.prototype.clientOnConnected=function(data) {
   var self = this.players[this.socket.userID];
   self.id = data.id;
   self.infoColor = '#cc0000';
-  self.state = 'connected';
+  self.state = 'YOU';
   self.online = true;
 
   //Migrate Current Client from default ID 0 to its given ID
-  console.log('Assigned ID: ' + data.id);
+  console.log('Server Assigned us ID: ' + data.id);
   this.players[data.id] = this.players[this.socket.userID];
   delete this.players[this.socket.userID]; //Complete the move
   this.socket.userID = data.id;
 };
-
+/**
+ * Create player on client
+ * @param id id of player
+ */
 gameCore.prototype.clientCreateNewPlayer = function (id) {
   this.players[id] = new gamePlayer(this);
+  if(id!=0){ //They were assigned an id, meaning they are online
+    this.players[id].online = true;
+    this.players[id].state = 'connected';
+  }
 
   if(this.socket.userID!==id) { //If we aren't the client player create ghosts
     this.ghosts.posOther[id] = new gamePlayer(this);
@@ -966,18 +950,40 @@ gameCore.prototype.clientCreateNewPlayer = function (id) {
     this.ghosts.serverPosOther[id].infoColor = 'rgba(255,255,255,0.2)';
     this.ghosts.posOther[id].state = 'destPos';
     this.ghosts.serverPosOther[id].state = 'serverPos';
-    this.ghosts.posOther[id].pos = {x: 500, y: 200};
-    this.ghosts.serverPosOther[id].pos = {x: 500, y: 200};
+    this.ghosts.posOther[id].pos = {x: 0, y: 0};
+    this.ghosts.serverPosOther[id].pos = {x: 0, y: 0};
   }
 
+};
+gameCore.prototype.clientRemovePlayer=function(id) {
+  delete this.players[id];
+
+  if(this.socket.userID!==id){ //if we aren't the client player, remove the ghosts
+    delete this.ghosts.posOther[id];
+    delete this.ghosts.serverPosOther[id];
+  }
 };
 /**
  * Called when the other client changes its color
  * @param color  Parsed Data from Server
  */
 gameCore.prototype.clientOnOtherClientColorChange=function(id,color) {
-  this.clientCreateNewPlayer(id);
   this.players[id].color = color;
+};
+/**
+ * Add player who has connected to the server
+ * @param otherID id of player who has connected
+ */
+gameCore.prototype.clientOnOtherClientJoinGame = function (otherID,color) {
+  this.createNewPlayer({userID: otherID});
+  this.players[otherID].color = color;
+};
+/**
+ * Remove player who has disconnected from the server
+ * @param otherID id of player that disconnected
+ */
+gameCore.prototype.clientOnOtherClientDisconnect=function(otherID) {
+  this.removePlayer({userID: otherID});
 };
 /**
  * Upon being pinged by server
@@ -986,36 +992,41 @@ gameCore.prototype.clientOnOtherClientColorChange=function(id,color) {
 gameCore.prototype.clientOnPing=function(data) {
   this.netPing = new Date().getTime() - parseFloat(data);
   this.netLatency = this.netPing / 2;
+  this.netOffset = Math.max(1,this.netPing); //Calculate command offset on server based on ping to server
 };
 /**
  * Called when any message from a server is received
  * @param data server packet received
  */
 gameCore.prototype.clientOnNetMessage=function(data) {
-  var commands = data.split('.'); //'.' delimits commands
-  var command = commands[0];
-  var subcommand = commands[1] || null;
-  var commandData = commands[2] || null;
-  switch (command) {
+  var command = data.split('.'); //'.' delimits commands
+  switch (command[0]) {
     case 's': //Server Message
-      switch (subcommand) {
-        case 'h': //host game requested
-          this.clientOnHostGame(commandData);
+      switch (command[1]) {
+        case 'y': //You (a message about our current player)
+          switch(command[2]){
+            case 'j': //We are joining a lobby
+              this.clientOnJoinGame(command[3], command[4]); //GameID, ServerTime
+              break;
+          }
           break;
-        case 'j': //join game requested
-          this.clientOnJoinGame(commandData);
-          break;
-        case 'r': //game is ready to start
-          this.clientOnReadyGame(commandData,commands[3]);//3rd command is server id
+        case 'pl': //Players (a message about another player in our game)
+          switch(command[2]){
+            case 'j': //A player is joining
+              this.clientOnOtherClientJoinGame(command[3],command[4]); //userID, color
+              break;
+            case 'c': //Other player color changed
+              this.clientOnOtherClientColorChange(command[4],command[3]); //client id that changed, color
+              break;
+            case 'd': //Other player disconnected
+              this.clientOnOtherClientDisconnect(command[3]);
+          }
           break;
         case 'e': //Game has ended
-          this.clientOnDisconnect(commandData);
+          this.clientOnDisconnect(command[2]);
           break;
         case 'p': //Server Ping
-          this.clientOnPing(commandData);
-          break;
-        case 'c': //Other player color changed
-          this.clientOnOtherClientColorChange(commands[3],commandData); //client id that changed, color
+          this.clientOnPing(command[2]);
           break;
       }
       break; //If its anything but a server message we ignore it
@@ -1034,8 +1045,8 @@ gameCore.prototype.clientOnDisconnect=function(data) {
 
   for(var key in this.players){
     if(this.players.hasOwnProperty(key) && key!==this.socket.userID) {
-      this.players[key].infoColor = 'rgba(255,255,255,0.1)';
-      this.players[key].state = 'not-connected';
+      this.removePlayer({userID: key});
+      this.serverUpdates = [];
     }
   }
 };

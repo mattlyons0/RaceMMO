@@ -33,9 +33,9 @@ describe('Game Server', function () {
     utils.connect(function (client1) {
 			var client2 = utils.connect();
       utils.logMessages([{client: client1, expected: 2}, {client: client2, expected: 2}], "message", function () {
-				client1.messages[1].should.startWith("s.r.");
-				client2.messages[0].should.startWith("s.j.");
-				client2.messages[1].should.startWith("s.r.");
+        client1.messages[0].split('.')[3].should.equal(client2.messages[0].split('.')[3]); //Should be put in same game lobby
+				client1.messages[1].should.containEql(client2.userID); //Should be told about client2
+				client2.messages[1].should.containEql(client1.userID); //Should be told about client1
 
 				client1.disconnect();
 				client2.disconnect();
@@ -46,8 +46,8 @@ describe('Game Server', function () {
 
   it('should respond to ping messages', function (done) {
     var client1 = utils.connect();
-    utils.logMessages([{client: client1, expected: 2}], "message", function () {
-      client1.messages[1].should.startWith("s.p.");
+    utils.logMessages([{client: client1, expected: 4}], "message", function () {
+      client1.messages[3].should.startWith("s.p.");
       client1.disconnect();
       done();
     });
@@ -57,13 +57,23 @@ describe('Game Server', function () {
   });
 
 	it('should talk between 3 players correctly', function (done) {
-		debug('TEST NOT WRITTEN');
-		"".should.not.exist();
-		//TODO write test
+    var client1 = utils.connect();
+    var client2 = utils.connect();
+    var client3 = utils.connect();
+
+    utils.logMessages([{client:client1,expected:3},{client:client2,expected:3},{client:client3,expected:3}], 'message', function(){
+      var messages1 = client1.messages, messages2 = client2.messages, messages3 = client3.messages;
+      messages1[0].split('.')[3].should.equal(messages2[0].split('.')[3]); //Should all connect to same server
+      messages2[0].split('.')[3].should.equal(messages3[0].split('.')[3]);
+
+      messages1[1].should.startWith('s.pl.j');
+      messages1[2].should.startWith('s.pl.j');
+      messages2[1].should.startWith('s.pl.j');
+      messages2[2].should.startWith('s.pl.j');
+      messages3[1].should.startWith('s.pl.j');
+      messages3[2].should.startWith('s.pl.j');
+
+      done();
+    });
 	});
-	it('should not match more than a the player limit in a server', function(done){
-		debug('TEST NOT WRITTEN');
-		"".should.not.exist();
-		//TODO write test
-	})
 });

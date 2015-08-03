@@ -62,14 +62,14 @@ gameServer._onMessage=function(client,message) {
       this.onInput(client, messageParts);
       break;
     case 'p': //Ping
-      client.send('s.p.' + messageParts[1]);
+      client.send('s.p.' + messageParts[1]); //Send ping back so client latency can be calculated
       break;
     case 'c': //Color change
-      //debug(client.game);
+      client.game.gameCore.players[client.userID].color = messageParts[1];
       var players = client.game.gameCore.players;
       for(var key in players){ //Send all clients that a client changed color
         if(players.hasOwnProperty(key) && key!==client.userID){
-          players[key].instance.send('s.c.' + messageParts[1]+'.'+client.userID); //Send which client changed color as message part index 3
+          players[key].instance.send('s.pl.c.' + messageParts[1]+'.'+client.userID); //Send which client changed color as message part index 3
         }
       }
       break;
@@ -106,7 +106,6 @@ gameServer.createGame=function(player) {
     playerCount: 0,
     playerCapacity: 3
   };
-  game.players[player.userID] = player;
   //game.playerCount++; //TODO figure out why this is called twice upon creation when this isnt commented
   this.games[game.id]=game; //Store game
   this.games.recentGame = game;
@@ -116,10 +115,7 @@ gameServer.createGame=function(player) {
   game.gameCore = new gameCore(game);
   game.gameCore.update(new Date().getTime()); //Start game loop
 
-  //Tell client they are host s=server message h=you are host
-  player.send('s.h.' + String(game.gameCore.localTime).replace('.', '-'));
-  debug('Server host at ' + game.gameCore.localTime);
-  player.game = game;
+  this.joinGame(game, player);
   debug('player: ' + player.userID + ' created game with id ' + player.game.id);
 
   return game;
@@ -150,33 +146,25 @@ gameServer.endGame=function(gameID,userID) {
 };
 
 /**
- * A game has been created and has 2 players, thus this is called
- * @param game game to start
- * @depreciated no longer used, as games don't start with two people anymore
- */
-gameServer.startGame=function(game) {
-  for(var key in game.players){ //reset positions of both players
-    debug('gameServer.startGame is depreciated');
-    if(game.players.hasOwnProperty(key)){
-      game.players[key].send('s.r.' + String(game.gameCore.localTime).replace('.', '-')+'.'+game.id);
-    }
-  }
-  game.active=true;
-};
-/**
  * Handle client disconnection
  * @param client client which disconnected
  */
 gameServer.onDisconnect = function (client) {
-  if (client.game && client.game.id) { //If the client was in a game, remove them from that game's instance
+  if (client.game && client.game.id) { //If the client was in a game, remove them from that game's instance and notify all other players in that game
     delete client.game.players[client.userID];
     client.game.playerCount--;
+    client.game.gameCore.removePlayer(client);
+
+    for(var player in client.game.players){
+      if(client.game.players.hasOwnProperty(player)){
+        client.game.players[player].send('s.pl.d.' + client.userID);
+      }
+    }
 
     if (client.game.playerCount <= 0) {
       this.endGame(client.game.id, client.userID);
       debug('Ended game ' + client.game.id);
     }
-
   }
 };
 /**
@@ -186,28 +174,37 @@ gameServer.onDisconnect = function (client) {
 gameServer.findGame=function(player) {
   debug('Looking for game. Currently: ' + this.gameCount);
   if(this.gameCount) { //There are active games
-    var found = false;
     for(var gameID in this.games) { //Check for game with slots
       if(!this.games.hasOwnProperty(gameID)) continue;
       var instance = this.games[gameID];
       if(instance.playerCount<instance.playerCapacity) {
-        found = true;
-        instance.players[player.userID] = player;
-        instance.gameCore.createNewPlayer(player);
-        instance.playerCount++;
-
-        player.send('s.j.' +instance.gameCore.players); //tell client he is joining a game and he isn't the first one
-        player.game = instance;
-
-        this.startGame(instance);
+        this.joinGame(instance, player);
+        return;
       }
     }
-    if(!found) {
-      this.createGame(player); //No games with slots
-    }
   }
-  else{
-    this.createGame(player); //No games currently
+  this.createGame(player); //No games with slots or no games exist, create a new one
+};
+/**
+ * Add player to a game lobby
+ * @param gameInstance instance of lobby
+ * @param playerSocket socketIO instance of player
+ */
+gameServer.joinGame = function (gameInstance, playerSocket) {
+  gameInstance.players[playerSocket.userID] = playerSocket;
+  gameInstance.gameCore.createNewPlayer(playerSocket);
+  gameInstance.playerCount++;
+
+  //tell client he is joining a game
+  playerSocket.send('s.y.j.' + gameInstance.id + "." + String(gameInstance.gameCore.localTime).replace('.', '-')); //Server You are Joining game [gameID] at time [gameTime]
+  playerSocket.game = gameInstance;
+
+  //Tell all clients in that game this player is joining & tell this player about all other clients
+  for(var player in gameInstance.players){
+    if(gameInstance.players.hasOwnProperty(player)&&gameInstance.players[playerSocket.userID]!==player){
+      playerSocket.send('s.pl.j.' + player + "." +gameInstance.gameCore.players[player].color); //Tell current player that other clients exist
+      gameInstance.players[player].send('s.pl.j.' + playerSocket.userID+"."+gameInstance.gameCore.players[playerSocket.userID].color); //Server Player is Joining with [playerID]
+    }
   }
 };
 
