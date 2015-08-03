@@ -61,6 +61,7 @@ this.logMessages = function (clients, event, callback, debugEnabled) {
           for (var x = 0; x <= clients.length; x++) {
             if (x === clients.length) {
               callback();
+              callback = null;
               return;
             }
             if (clients[x].client.messages.length < clients[x].expected) {
