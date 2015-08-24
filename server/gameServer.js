@@ -75,6 +75,7 @@ gameServer._onMessage=function(client,message) {
       break;
     case 'l': //Lag simulation request
       this.fakeLag = parseFloat(messageParts[1]); //Given in MS
+      debug('faking lag by ' + this.fakeLag);
       break;
   }
 };
@@ -108,7 +109,7 @@ gameServer.createGame=function(player) {
   };
   //game.playerCount++; //TODO figure out why this is called twice upon creation when this isnt commented
   this.games[game.id]=game; //Store game
-  this.games.recentGame = game;
+  gameServer.recentGame = game;
   this.gameCount++;
 
   //Create core instance for this game

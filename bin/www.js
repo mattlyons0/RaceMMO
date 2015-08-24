@@ -9,6 +9,8 @@ var debug = require('debug')('RaceMMO:server');
 var http = require('http');
 var io = require('socket.io');
 var uuid = require('node-uuid');
+
+var commands = [];
 /**
  * Get port from environment and store in Express.
  */
@@ -45,6 +47,7 @@ Setup Game Server
 var gameServer = require('../server/gameServer');
 app.gameServer = gameServer;
 setupGameServer(gameServer);
+setupCommandLine(gameServer);
 
 /**
  * Setup Gameserver with the webserver and socket.io
@@ -69,6 +72,90 @@ function setupGameServer(server) {
     });
   });
 }
+/**
+ * Configure stdin to call runCommand() and sets up commands
+ * @param gameServer server to apply commands to
+ */
+function setupCommandLine(gameServer){
+  process.stdin.setEncoding('utf8');
+
+  process.stdin.on('readable', function() {
+    var chunk = process.stdin.read();
+    if (chunk !== null) {
+      runCommand(chunk);
+    }
+  });
+
+  process.stdin.on('end', function() {
+    debug('Stdin has ended');
+  });
+
+  //Setup commands
+
+  addCommand('help', 'Displays a list of all commands. If supplied a command will only show help for that command', function (args) {
+    var output = "";
+    for(var i=0;i<commands.length;i++){
+      var command = commands[i];
+      if((args[0]===command.command)||!args[0]) //If we have a first argument, only show help for that. Otherwise show help for everything
+        output += command.command + ": " + command.description+"\n";
+    }
+    console.log(output);
+  });
+  addCommand('games', 'Display a list of ongoing games. If supplied a game number (from the list), will show extended details from that game.', function (args) {
+    var games = gameServer.games;
+    var num = 1;
+
+    var output = "Currently " + gameServer.gameCount + " game"+(gameServer.gameCount!==1?"s":"")+".\n";
+    for(var gameID in games){
+      if(games.hasOwnProperty(gameID)){
+        var game = games[gameID];
+        if(!args[0]||args[0]==num) //If argument supplied only show that number, otherwise show all games
+          output += "\t"+ (!args[0]?(num+ ") "):"") + game.id + ": (" + game.playerCount + "/" + game.playerCapacity + ")\n";
+        if(args[0]==num){
+          var pcount = 1;
+          output += "\tPlayers: \n";
+          for(var player in game.players){
+
+            if(game.players.hasOwnProperty(player)){
+              output += "\t\t" + pcount + ") " + game.players[player].userID;
+
+              pcount++;
+            }
+          }
+        }
+        num++;
+      }
+    }
+    console.log(output);
+  });
+}
+/**
+ * Handle stdin
+ * @param msg command input
+ */
+function runCommand(msg) {
+  msg = msg.trim();
+  var args = msg.split(" ");
+  if(args.length===0)
+    return;
+  for(var i=0;i<commands.length;i++){
+    var command = commands[i];
+    if(args[0]===command.command){
+      command.callback(args.splice(1, args.length-1)); //Give everything as an argument except command
+      return;
+    }
+  }
+  console.log('No command found.')
+}
+/**
+ * Add command to respond to input
+ * @param str string which will call the command
+ * @param description description of what the command does to be used for help text
+ * @param callback function to call when command is run (will be given arguments)
+ */
+function addCommand (str,description, callback) {
+  commands.push({command: str, description: description, callback: callback});
+};
 /**
  * Setup Socket.IO Listener
  */
@@ -139,4 +226,5 @@ function onListening() {
     : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
+
 module.exports = app;

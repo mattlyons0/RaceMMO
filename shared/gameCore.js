@@ -671,9 +671,17 @@ gameCore.prototype.clientProcessNetUpdates=function() {
     //Called if we aren't predicting client movement, update position of current client from server
     if(!this.clientPredict && !this.naiveApproach) {
       var myServerPos = latestServerData.pl[this.socket.userID].pos;
-      var myTargetPos = target[this.socket.userID].pos;
+      var myTarget = target.pl[this.socket.userID];
       //Why would we not exist in the future?
-      var myPastPos = previous[this.socket.userID].pos;
+      var myPast = previous.pl[this.socket.userID];
+      var myTargetPos,myPastPos;
+      if(myTarget&&myPast){
+        myTargetPos=myTarget.pos;
+        myPastPos=myPast.pos;
+      } else{ //We didn't exist in the past or in the future (because of a disconnect/reconnect)
+        myTargetPos=myServerPos;
+        myPastPos=myServerPos
+      }
 
       this.ghosts.serverPosSelf.pos = this.pos(myServerPos); //Snap ghost to new server pos
       var localTarget = this.vLerp(myPastPos, myTargetPos, timePoint);

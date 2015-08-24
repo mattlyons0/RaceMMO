@@ -274,7 +274,7 @@ describe('Game Core Client', function () {
 describe('Game Core Server', function () {
   it('should initialize properly', function (done) {
     utils.connect(function (client) {
-      var game = app.gameServer.games.recentGame;
+      var game = app.gameServer.recentGame;
       var core = game.gameCore;
       core.instance.should.eql(game);
       core.server.should.equal(true);
@@ -294,7 +294,7 @@ describe('Game Core Server', function () {
 
   it('should update physics properly', function (done) { //Merely tests physics timing update
     utils.connect(function (client) {
-      var core = app.gameServer.games.recentGame.gameCore;
+      var core = app.gameServer.recentGame.gameCore;
       setTimeout(function () { //Avoid first tick
         var oldpdt = core._pdte;
         setTimeout(function () {
@@ -310,7 +310,7 @@ describe('Game Core Server', function () {
   it('should process inputs correctly', function (done) {
     game = new gameCore(undefined, true); //Tell them we are a fake client
     game.socket.on('connect', function () {
-      var core = app.gameServer.games.recentGame.gameCore;
+      var core = app.gameServer.recentGame.gameCore;
       setTimeout(function () { //First Physics Tick
         simulateKeypress(game, ['d']);
         var oldState = core.players[game.socket.userID].pos;
@@ -341,7 +341,7 @@ describe('Game Core Server', function () {
 
   it('should update time correctly', function (done) {
     utils.connect(function (client) {
-      var core = app.gameServer.games.recentGame.gameCore;
+      var core = app.gameServer.recentGame.gameCore;
       setTimeout(function () { //Avoid First Tick
         var localTime = core.serverTime;
         setTimeout(function () {
@@ -357,7 +357,7 @@ describe('Game Core Server', function () {
   it('should send updates to clients properly', function (done) {
     var isDone = false;
     utils.connect(function (client) {
-      var core = app.gameServer.games.recentGame.gameCore;
+      var core = app.gameServer.recentGame.gameCore;
       var called = false;
       client.on('onserverupdate', function (update) {
         if(called===true) return;

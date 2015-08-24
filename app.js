@@ -137,8 +137,5 @@ var shutdown=function() {
     process.exit();
   }, 30 * 1000);//If cannot shutdown after 30 seconds forcefully shutdown
 };
-//var repl = require("repl");
-//r = repl.start("node> ");
-//r.context.shutdown = shutdown;
 
 module.exports = app;
