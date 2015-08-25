@@ -29,3 +29,4 @@ node_modules
 #Idea Workspace Files
  .idea/workspace.xml
  .idea/libraries
+ .idea

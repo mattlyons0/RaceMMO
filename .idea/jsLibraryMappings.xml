@@ -2,7 +2,7 @@
 <project version="4">
   <component name="JavaScriptLibraryMappings">
     <file url="file://$PROJECT_DIR$" libraries="{RaceMMO node_modules}" />
-    <file url="PROJECT" libraries="{Node.js v0.12.6 Core Modules}" />
+    <file url="PROJECT" libraries="{Node.js v0.12.7 Core Modules}" />
     <includedPredefinedLibrary name="Node.js Globals" />
   </component>
 </project>
