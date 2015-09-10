@@ -6,7 +6,7 @@
  */
 var fakeClient = false; //Will be set to true if we are faking being a client on the server for tests
 var onServer = function () {
-  if (!fakeClient && 'undefined' != typeof(global)) //check if we are on the server and are not pretending to be a client
+  if (!fakeClient && 'undefined' != typeof (global)) //Check if we are on the server and are not pretending to be a client
     return true;
   return false;
 };
@@ -30,7 +30,7 @@ var setupTiming = function (window) {
       var currentTime = Date.now();
       var timeToCall = Math.max(0, frameTime - (currentTime - lastTime));
       var id = window.setTimeout(function () {
-        callback(currentTime + timeToCall)
+        callback(currentTime + timeToCall);
       }, timeToCall);
       lastTime = currentTime + timeToCall;
       return id;
@@ -39,7 +39,7 @@ var setupTiming = function (window) {
   if (!window.cancelAnimationFrame) {
     window.cancelAnimationFrame = function (id) {
       clearTimeout(id);
-    }
+    };
   }
 };
 
@@ -49,31 +49,30 @@ var setupTiming = function (window) {
  * @param gameInstance instance of game to run logic on
  * @param clientFake boolean if this is a fake instance of a client (ex for testing)
  */
-var gameCore=function(gameInstance,clientFake) {
-  if(clientFake===true) fakeClient = true;
+var GameCore = function (gameInstance, clientFake) {
+  if (clientFake === true) fakeClient = true;
 
-  if(onServer()) frameTime = 45; //run at 22hz on server
-  setupTiming(typeof window == "undefined" ? global : window); //Create timing mechanism that works both serverside and clientside
+  if (onServer()) frameTime = 45; //Run at 22hz on server
+  setupTiming(typeof window == 'undefined' ? global : window); //Create timing mechanism that works both serverside and clientside
 
   this.instance = gameInstance;
-  this.server=this.instance !== undefined; //Store if we are the server
+  this.server = this.instance !== undefined; //Store if we are the server
   this.world = {width: 720, height: 480};
   //Create player set and tell them the game is running
   this.players = []; //Players is an array of the id's as keys, or 0 for self if we don't have an ID yet
-  if(this.server) {
-    for(var key in this.instance.players){
-      if(this.instance.players.hasOwnProperty(key)){
+  if (this.server) {
+    for (var key in this.instance.players) {
+      if (this.instance.players.hasOwnProperty(key)) {
         console.log('adding player ' + key);
         this.createNewPlayer(this.instance.players[key]);
       }
     }
-  }
-  else { //On Client
+  } else { //On Client
     this.socket = {userID: 0};//Initial ID before server assigns us one
     this.createNewPlayer({userID: this.socket.userID});
     //Display ghosts
     this.ghosts = {
-      serverPosSelf: new gamePlayer(this), //Our ghost position on the server
+      serverPosSelf: new GamePlayer(this), //Our ghost position on the server
       serverPosOther: [], //The other player's server position
       posOther: [] //The other players lerp position
     };
@@ -97,38 +96,37 @@ var gameCore=function(gameInstance,clientFake) {
   this.createTimer(); //Create fast timer to measure time
 
   //ClientSide Only Init
-  if(!this.server) {
-    if(!fakeClient)
+  if (!this.server) {
+    if (!fakeClient)
       this.keyboard = new THREEx.KeyboardState(); //Keyboard Handler
     this.clientCreateConfiguration(); //Create Default Settings for client
     this.serverUpdates = []; //List of recent server updates so we can interpolate
     this.clientConnectToServer(); //Connect to the socket.io server
     this.clientCreatePingTimer(); //Start pinging server and determine latency
-    if(!fakeClient) {
+    if (!fakeClient) {
       this.color = localStorage.getItem('color') || this.randomColor(); //Get color from localStorage or use random color
       localStorage.setItem('color', this.color);
     }
     this.players[this.socket.userID].color = this.color; //Set Players color
 
     //Make debug gui if requested
-    if(String(window.location).indexOf('debug')!=-1) {
+    if (String(window.location).indexOf('debug') != -1) {
       this.clientCreateDebugGui();
     }
-  }
-  else { //if we are running this serverside
+  } else { //If we are running this serverside
     this.serverTime = 0;
     this.lastState = {};
   }
-}; //gameCore constructor
+}; //GameCore constructor
 
-//serverside we set gameCore as the global type
-if('undefined' != typeof global) {
-  module.exports = global.gameCore = gameCore;
+//Serverside we set GameCore as the global type
+if ('undefined' != typeof global) {
+  module.exports = global.GameCore = GameCore;
 }
 
 /*
-  Helper functions for game code
-    2D vector code helpers and rounding helpers
+ Helper functions for game code
+ 2D vector code helpers and rounding helpers
  */
 
 /**
@@ -145,7 +143,7 @@ Number.prototype.fixed = function (n) {
  * @param a vector to copy
  * @returns {{x: (number|*|Number), y: (number|*|Number)}} copied vector
  */
-gameCore.prototype.pos=function(a) {
+GameCore.prototype.pos = function (a) {
   return {x: a.x, y: a.y};
 };
 /**
@@ -154,7 +152,7 @@ gameCore.prototype.pos=function(a) {
  * @param b vector 2 to add
  * @returns {{x: (Number|string), y: (Number|string)}} the resulting vector after vector addition
  */
-gameCore.prototype.vAdd=function(a,b) {
+GameCore.prototype.vAdd = function (a, b) {
   return {x: (a.x + b.x).fixed(), y: (a.y + b.y).fixed()};
 };
 /**
@@ -163,7 +161,7 @@ gameCore.prototype.vAdd=function(a,b) {
  * @param b vector 2 to subtract
  * @returns {{x: Number, y: Number}} the resulting vector after subracting a from b
  */
-gameCore.prototype.vSub=function(a,b) {
+GameCore.prototype.vSub = function (a, b) {
   return {x: (a.x - b.x).fixed(), y: (a.y - b.y).fixed()};
 };
 /**
@@ -172,13 +170,13 @@ gameCore.prototype.vSub=function(a,b) {
  * @param b scalar
  * @returns {{x: Number, y: Number}} the result of the scalar multiplication
  */
-gameCore.prototype.vMultScalar=function(a,b) {
+GameCore.prototype.vMultScalar = function (a, b) {
   return {x: (a.x * b).fixed(), y: (a.y * b).fixed()};
 };
 /**
  * For the server, cancel the setTimeout
  */
-gameCore.prototype.stopUpdate = function () {
+GameCore.prototype.stopUpdate = function () {
   window.cancelAnimationFrame(this.updateID);
 };
 /**
@@ -188,7 +186,7 @@ gameCore.prototype.stopUpdate = function () {
  * @param t
  * @returns {Number|string}
  */
-gameCore.prototype.lerp=function(p,n,t) {
+GameCore.prototype.lerp = function (p, n, t) {
   var _t = Number(t);
   _t = (Math.max(0, Math.min(1, _t))).fixed();
   return (p + _t * (n - p)).fixed();
@@ -200,14 +198,14 @@ gameCore.prototype.lerp=function(p,n,t) {
  * @param t
  * @returns {{x: (Number|string), y: (Number|string)}}
  */
-gameCore.prototype.vLerp=function(v,tv,t) {
+GameCore.prototype.vLerp = function (v, tv, t) {
   return {x: this.lerp(v.x, tv.x, t), y: this.lerp(v.y, tv.y, t)};
 };
 /**
  * Returns a random integer between min (inclusive) and max (inclusive)
  * Using Math.round() will give you a non-uniform distribution!
  */
-gameCore.prototype.randomInt = function (min, max) {
+GameCore.prototype.randomInt = function (min, max) {
   return Math.floor(Math.random() * (max - min + 1)) + min;
 };
 
@@ -215,7 +213,7 @@ gameCore.prototype.randomInt = function (min, max) {
  * Generates a random color in hex
  * @returns {string} random color
  */
-gameCore.prototype.randomColor = function () {
+GameCore.prototype.randomColor = function () {
   return '#' + Math.floor(Math.random() * 16777215).toString(16);
 };
 
@@ -224,7 +222,7 @@ gameCore.prototype.randomColor = function () {
  * @param gameInstance instance of game
  * @param playerInstance instance of player
  */
-var gamePlayer=function(gameInstance,playerInstance) {
+var GamePlayer = function (gameInstance, playerInstance) {
   //Store Instance
   this.instance = playerInstance;
   this.game = gameInstance;
@@ -235,7 +233,7 @@ var gamePlayer=function(gameInstance,playerInstance) {
   this.state = 'not-connected';
   this.id = ''; //Will be assigned later
   this.online = false;
-  if(playerInstance)
+  if (playerInstance)
     this.online = true;
 
   //Movement
@@ -258,34 +256,34 @@ var gamePlayer=function(gameInstance,playerInstance) {
 /**
  *
  */
-gamePlayer.prototype.draw=function() {
-  if(fakeClient) return;
+GamePlayer.prototype.draw = function () {
+  if (fakeClient) return;
   //Draw Player Rectangle
   game.ctx.fillStyle = 'rgba(255,255,255,0.1)'; //Draw grey if online is false
-  if(this.online===true)
+  if (this.online === true)
     game.ctx.fillStyle = this.color;
-  if(this.id===this.game.socket.userID)
+  if (this.id === this.game.socket.userID)
     game.ctx.fillStyle = this.game.color;
   game.ctx.fillRect(this.pos.x - this.size.hx, this.pos.y - this.size.hy, this.size.x, this.size.y);
   //Draw Player Status
-  if(this.online===true)
-    game.ctx.fillStyle=this.infoColor;
+  if (this.online === true)
+    game.ctx.fillStyle = this.infoColor;
   game.ctx.fillText(this.state, this.pos.x + 10, this.pos.y + 4);
 };
 
 /*
-COMMON FUNCTIONS
-  Generic Functions for game state
+ COMMON FUNCTIONS
+ Generic Functions for game state
  */
 
 /**
  * Main update loop
  * @param t current time
  */
-gameCore.prototype.update=function(t) {
+GameCore.prototype.update = function (t) {
   this.dt = this.lastFrameTime ? ((t - this.lastFrameTime) / 1000.0).fixed() : 0.016; //Calculate Delta Time
   this.lastFrameTime = t;
-  if(!this.server) { //If we arent the server, update the client, otherwise update the server
+  if (!this.server) { //If we arent the server, update the client, otherwise update the server
     this.clientUpdate();
   } else {
     this.serverUpdate();
@@ -296,17 +294,17 @@ gameCore.prototype.update=function(t) {
  * Check collision between the world bounds and the item
  * @param item item to check against the world bounds
  */
-gameCore.prototype.checkCollision=function(item) {
-  if(item.pos.x <= item.posLimits.xMin) { //Left Wall
+GameCore.prototype.checkCollision = function (item) {
+  if (item.pos.x <= item.posLimits.xMin) { //Left Wall
     item.pos.x = item.posLimits.xMin;
   }
-  if(item.pos.x >= item.posLimits.xMax) { //Right Wall
+  if (item.pos.x >= item.posLimits.xMax) { //Right Wall
     item.pos.x = item.posLimits.xMax;
   }
-  if(item.pos.y <= item.posLimits.yMin) { //Top Wall
+  if (item.pos.y <= item.posLimits.yMin) { //Top Wall
     item.pos.y = item.posLimits.yMin;
   }
-  if(item.pos.y >= item.posLimits.yMax) { //Bottom Wall
+  if (item.pos.y >= item.posLimits.yMax) { //Bottom Wall
     item.pos.y = item.posLimits.yMax;
   }
 
@@ -319,17 +317,17 @@ gameCore.prototype.checkCollision=function(item) {
  * @param player player to process inputs for
  * @returns {*} resulting vector from inputs
  */
-gameCore.prototype.processInput=function(player) {
+GameCore.prototype.processInput = function (player) {
   var xDir = 0;
   var yDir = 0;
   var ic = player.inputs.length; //Input Count
-  if(ic) {
-    for(var x=0; x<ic; ++x) {
-      if(player.inputs[x].seq <= player.lastInputSeq) continue; //Skip if we have simulated it locally
+  if (ic) {
+    for (var x = 0; x < ic; ++x) {
+      if (player.inputs[x].seq <= player.lastInputSeq) continue; //Skip if we have simulated it locally
 
       var input = player.inputs[x].inputs;
       var c = input.length;
-      for(var i=0; i < c; ++i) {
+      for (var i = 0; i < c; ++i) {
         var key = input[i];
         switch (key) { //Switch over keys
           case 'l':
@@ -349,7 +347,7 @@ gameCore.prototype.processInput=function(player) {
     }
   }
   var resultingVector = this.physicsMovementVectorFromDirection(xDir, yDir);
-  if(player.inputs.length) {
+  if (player.inputs.length) {
     //Clear array of proccessed inputs
     player.lastInputTime = player.inputs[ic - 1].time;
     player.lastInputSeq = player.inputs[ic - 1].seq;
@@ -362,18 +360,18 @@ gameCore.prototype.processInput=function(player) {
  * @param y y direction
  * @returns {{x: Number, y: Number}} Vector of movement
  */
-gameCore.prototype.physicsMovementVectorFromDirection=function(x,y) {
+GameCore.prototype.physicsMovementVectorFromDirection = function (x, y) {
   //Must be fixed step at physics sync speed
   return {
-    x: (x*(this.playerSpeed*0.015)).fixed(3), //0.015=1/66 (1 / input poll time (physics update time))
-    y: (y*(this.playerSpeed*0.015)).fixed(3)
+    x: (x * (this.playerSpeed * 0.015)).fixed(3), //0.015=1/66 (1 / input poll time (physics update time))
+    y: (y * (this.playerSpeed * 0.015)).fixed(3)
   };
 };
 /**
  * Update physics callable from both client and server
  */
-gameCore.prototype.updatePhysics=function() {
-  if(this.server) {
+GameCore.prototype.updatePhysics = function () {
+  if (this.server) {
     this.serverUpdatePhysics();
   } else {
     this.clientUpdatePhysics();
@@ -383,15 +381,14 @@ gameCore.prototype.updatePhysics=function() {
  * Add new player to local version of the server
  * @param playerInstance instance of player (only userID field is used for clientside)
  */
-gameCore.prototype.createNewPlayer = function (playerInstance) {
-  if(this.players[playerInstance.userID]){
+GameCore.prototype.createNewPlayer = function (playerInstance) {
+  if (this.players[playerInstance.userID]) {
     console.warn('Tried to create a player that already existed! ' + playerInstance.userID);
     return;
   }
   if (this.server) {
     this.serverCreateNewPlayer(playerInstance);
-  }
-  else {
+  } else {
     this.clientCreateNewPlayer(playerInstance.userID);
   }
   console.log('Created player ' + playerInstance.userID);
@@ -400,46 +397,45 @@ gameCore.prototype.createNewPlayer = function (playerInstance) {
  * Remove player from local version of server
  * @param playerInstance instance of player (only userID field is used)
  */
-gameCore.prototype.removePlayer=function(playerInstance) {
-  if(this.server){
+GameCore.prototype.removePlayer = function (playerInstance) {
+  if (this.server) {
     this.serverRemovePlayer(playerInstance);
-  }
-  else {
+  } else {
     this.clientRemovePlayer(playerInstance.userID);
   }
   console.log('Removed player ' + playerInstance.userID);
 };
 
 /*
-SERVER FUNCTIONS
-  Functions specifically for serverSide only
+ SERVER FUNCTIONS
+ Functions specifically for serverSide only
  */
 /**
  * Create player instance for server logic
  * @param player instance of player
  */
-gameCore.prototype.serverCreateNewPlayer=function(player) {
-  this.players[player.userID]=new gamePlayer(this, player);
+GameCore.prototype.serverCreateNewPlayer = function (player) {
+  this.players[player.userID] = new GamePlayer(this, player);
   var playerObj = this.players[player.userID];
-  playerObj.pos=
+  playerObj.pos =
   { //Generate random starting positions for each player
     x: this.randomInt(playerObj.posLimits.xMin, playerObj.posLimits.xMax),
-      y: this.randomInt(playerObj.posLimits.yMin, playerObj.posLimits.yMax)
+    y: this.randomInt(playerObj.posLimits.yMin, playerObj.posLimits.yMax)
   };
 };
 /**
  * Remove player instance from server logic
  * @param player instance of player
  */
-gameCore.prototype.serverRemovePlayer = function (player) {
+GameCore.prototype.serverRemovePlayer = function (player) {
   delete this.players[player.userID];
 };
 /**
  * Updated every 15ms, simulates world state
  */
-gameCore.prototype.serverUpdatePhysics=function() {
-  for(var key in this.players) {
-    if(this.players.hasOwnProperty(key)) {
+GameCore.prototype.serverUpdatePhysics = function () {
+  for (var key in this.players) {
+    if (this.players.hasOwnProperty(key)) {
       var player = this.players[key];
       player.oldState.pos = this.pos(player.pos); //Move current state to oldState
       var newDir = this.processInput(player);
@@ -449,25 +445,25 @@ gameCore.prototype.serverUpdatePhysics=function() {
   }
   //Seperate loops because we want collision check to happen after movement
   //Do Collision
-  for(var key in this.players) {
-    if(this.players.hasOwnProperty(key)){
-      var player = this.players[key];
-      this.checkCollision(player);
+  for (var key1 in this.players) {
+    if (this.players.hasOwnProperty(key1)) {
+      var player1 = this.players[key1];
+      this.checkCollision(player1);
     }
   }
 };
 /**
  * Notify clients of changes to player states
  */
-gameCore.prototype.serverUpdate=function() {
+GameCore.prototype.serverUpdate = function () {
   this.serverTime = this.localTime; //Update our clock to match timer
   //if(this.lastState.his===this.players.self.lastInputSeq&&this.lastState.cis===this.players.other.lastInputSeq) {
   //  return; //Disables sending same state multiple times, but also causes state match bugs, so I'll comment it until its needed
   //}
   var playersData = [];
-  var num=0;
-  for(var key in this.players) {
-    if(this.players.hasOwnProperty(key)){
+  var num = 0;
+  for (var key in this.players) {
+    if (this.players.hasOwnProperty(key)) {
       var player = this.players[key];
       playersData[num] = {id: key, pos: player.pos, is: player.lastInputSeq};
       num++;
@@ -479,10 +475,10 @@ gameCore.prototype.serverUpdate=function() {
   };
 
   //Send data updates to all clients
-  for(var key in this.players) {
-    if(this.players.hasOwnProperty(key)) {
-      var player = this.players[key];
-      player.instance.emit('onserverupdate', this.lastState);
+  for (var key1 in this.players) {
+    if (this.players.hasOwnProperty(key1)) {
+      var player1 = this.players[key1];
+      player1.instance.emit('onserverupdate', this.lastState);
     }
   }
 };
@@ -493,14 +489,14 @@ gameCore.prototype.serverUpdate=function() {
  * @param inputTime time input was given
  * @param inputSeq sequence of inputs
  */
-gameCore.prototype.handleServerInput=function(client,input,inputTime,inputSeq) {
+GameCore.prototype.handleServerInput = function (client, input, inputTime, inputSeq) {
   var playerClient = this.players[client.userID];//Figure out which player gave the input
   playerClient.inputs.push({inputs: input, time: inputTime, seq: inputSeq}); //Push into array of stored inputs
 };
 
 /*
-CLIENTSIDE FUNCTIONS
-  Functions for clientside only
+ CLIENTSIDE FUNCTIONS
+ Functions for clientside only
  */
 
 /**
@@ -509,17 +505,17 @@ CLIENTSIDE FUNCTIONS
  *  @param manualInput manually input an array (optionally)
  *  @returns {*} Movement Vector from resulting input
  */
-gameCore.prototype.clientHandleInput=function(manualInput) {
+GameCore.prototype.clientHandleInput = function (manualInput) {
   var xDir = 0;
   var yDir = 0;
   var input = [];
-  if(manualInput){
+  if (manualInput) {
     manualInput.forEach(function (val) {
       input.push(val);
     });
   }
 
-  if(this.keyboard) { //Skip this during tests if it is undefined
+  if (this.keyboard) { //Skip this during tests if it is undefined
     if (this.keyboard.pressed('A') || this.keyboard.pressed('left')) {
       xDir = -1;
       input.push('l');
@@ -538,7 +534,7 @@ gameCore.prototype.clientHandleInput=function(manualInput) {
     }
   }
 
-  if(input.length) {
+  if (input.length) {
     this.inputSeq += 1;
     this.players[this.socket.userID].inputs.push({ //Store input state as a snapshot
       inputs: input,
@@ -554,17 +550,16 @@ gameCore.prototype.clientHandleInput=function(manualInput) {
 
     this.socket.send(serverPacket); //Send to server
     return this.physicsMovementVectorFromDirection(xDir, yDir); //Return vector if needed
-  }
-  else{
+  } else {
     return {x: 0, y: 0};
   }
 };
 /**
  * Calculate Client Prediction
  */
-gameCore.prototype.clientProcessNetPredictionCorrection=function() {
+GameCore.prototype.clientProcessNetPredictionCorrection = function () {
   //NOTE: this.serverUpdates.pl is the associative array with the key as player id's
-  if(!this.serverUpdates.length) return; //Nothing to do if there are no updates
+  if (!this.serverUpdates.length) return; //Nothing to do if there are no updates
 
   var latestServerData = this.serverUpdates[this.serverUpdates.length - 1];
   var myData = latestServerData.pl[this.socket.userID];
@@ -573,32 +568,32 @@ gameCore.prototype.clientProcessNetPredictionCorrection=function() {
 
   //Local Input Prediction
   var myLastInputOnServer = myData.is;
-  if(myLastInputOnServer) { //We haven't moved from our initial position if undef
+  if (myLastInputOnServer) { //We haven't moved from our initial position if undef
     var lastInputSeqIndex = -1; //Last input sequence from my input
     //Find input on server
-    for(var i=0;i<this.players[this.socket.userID].inputs.length;++i) {
-      if(this.players[this.socket.userID].inputs[i].seq==myLastInputOnServer) {
-        lastInputSeqIndex=i;
+    for (var i = 0; i < this.players[this.socket.userID].inputs.length; ++i) {
+      if (this.players[this.socket.userID].inputs[i].seq == myLastInputOnServer) {
+        lastInputSeqIndex = i;
         break;
       }
     }
-    if(lastInputSeqIndex!=-1) { //Server acknowledges that our inputs were accepted
+    if (lastInputSeqIndex != -1) { //Server acknowledges that our inputs were accepted
       var numberToClear = Math.abs(lastInputSeqIndex - (-1)); //Clear inputs we confirmed are on server
       this.players[this.socket.userID].inputs.splice(0, numberToClear);
       this.players[this.socket.userID].currentState.pos = this.pos(myServerPos); //We know we are at this position because the server confirmed it
       this.players[this.socket.userID].lastInputSeq = lastInputSeqIndex;
       //Reapply all inputs that the server hasn't yet confirmed to 'keep' our position the same while confirming the server position
       this.clientUpdatePhysics();
-    } else if(this.players[this.socket.userID].inputs.length>10){ //Warn when a reasonable amount of inputs have not been accepted
-      console.warn(this.players[this.socket.userID].inputs.length+' Inputs have not been accepted by server'); //TODO change to warn when they haven't been accepted in a certain time
+    } else if (this.players[this.socket.userID].inputs.length > 10) { //Warn when a reasonable amount of inputs have not been accepted
+      console.warn(this.players[this.socket.userID].inputs.length + ' Inputs have not been accepted by server'); //TODO change to warn when they haven't been accepted in a certain time
     }
   }
 };
 /**
  * Process updates from the server
  */
-gameCore.prototype.clientProcessNetUpdates=function() {
-  if(!this.serverUpdates.length) return; //Nothing to do if there are no updates
+GameCore.prototype.clientProcessNetUpdates = function () {
+  if (!this.serverUpdates.length) return; //Nothing to do if there are no updates
 
   //Find the position in the timeline of the updates we store
   var currentTime = this.clientTime;
@@ -607,26 +602,26 @@ gameCore.prototype.clientProcessNetUpdates=function() {
   var previous = null;
 
   //Look for oldest update since newest ones are at the end, if our time isn't on timeline it will be very expensive!
-  for(var i=0;i<count;++i) {
+  for (var i = 0; i < count; ++i) {
     var point = this.serverUpdates[i];
     var nextPoint = this.serverUpdates[i + 1];
 
-    if(currentTime>point.t&&currentTime<nextPoint.t) { //If the server update was between the current time and the last confirmed update
+    if (currentTime > point.t && currentTime < nextPoint.t) { //If the server update was between the current time and the last confirmed update
       //We found the most recent server update that we haven't processed yet
-      target=nextPoint;
+      target = nextPoint;
       previous = point;
       break;
     }
   }
-  if(!target) { //use last known server pos and move to it
+  if (!target) { //use last known server pos and move to it
     target = this.serverUpdates[0];
     previous = this.serverUpdates[0];
-    if(this.serverUpdates.length>1)
-      console.warn("Could not find last server update!"); //If this happens and it isn't on the first tick, something weird is going on
+    if (this.serverUpdates.length > 1)
+      console.warn('Could not find last server update!'); //If this happens and it isn't on the first tick, something weird is going on
   }
 
   //Interpolate between target and previous destination
-  if(target&&previous) {
+  if (target && previous) {
     //Timing Math
     this.targetTime = target.t;
 
@@ -635,30 +630,29 @@ gameCore.prototype.clientProcessNetUpdates=function() {
     var timePoint = (difference / maxDifference).fixed(3);
 
     //Safeguard extreme cases (divide by 0)
-    if(isNaN(timePoint))timePoint = 0;
-    if(timePoint==-Infinity)timePoint = 0;
-    if(timePoint==Infinity)timePoint = 0;
+    if (isNaN(timePoint))timePoint = 0;
+    if (timePoint == -Infinity)timePoint = 0;
+    if (timePoint == Infinity)timePoint = 0;
 
     //Movement Math
     var latestServerData = this.serverUpdates[this.serverUpdates.length - 1]; //Most Recent Server Update
-    for(var id in this.players){
-      if(this.players.hasOwnProperty(id)&&id!==this.socket.userID){ //Process everyone other than current client
-        if(!latestServerData.pl[id]){ //We don't exist in the server update, maybe because we recently disconnected and reconnected
+    for (var id in this.players) {
+      if (this.players.hasOwnProperty(id) && id !== this.socket.userID) { //Process everyone other than current client
+        if (!latestServerData.pl[id]) { //We don't exist in the server update, maybe because we recently disconnected and reconnected
           console.warn('Player not in server update!');
           continue;
         }
-        var otherServerPos=latestServerData.pl[id].pos; //The exact server positions, used for the ghost
-        var otherTargetPos = target.pl[id] ? target.pl[id].pos:undefined; //If player exists in these server states, use their position. If not undefined will be correctly handled below
-        var otherPastPos = previous.pl[id] ? previous.pl[id].pos:undefined;
+        var otherServerPos = latestServerData.pl[id].pos; //The exact server positions, used for the ghost
+        var otherTargetPos = target.pl[id] ? target.pl[id].pos : undefined; //If player exists in these server states, use their position. If not undefined will be correctly handled below
+        var otherPastPos = previous.pl[id] ? previous.pl[id].pos : undefined;
 
         //Update Destination Ghost
         this.ghosts.serverPosOther[id].pos = this.pos(otherServerPos);
 
         //ghosts.posOther is the destination position, if there is no past position theres no destination
-        if(otherPastPos&&otherTargetPos) { //If we can update the ghost using lerp great, if not fall back to simply plugging in from server update
+        if (otherPastPos && otherTargetPos) { //If we can update the ghost using lerp great, if not fall back to simply plugging in from server update
           this.ghosts.posOther[id].pos = this.vLerp(otherPastPos, otherTargetPos, timePoint); //Linear interpolation between past and target position at a given time
-        }
-        else{ //Player didn't exist in last server update, so simply plug in his position
+        } else { //Player didn't exist in last server update, so simply plug in his position
           this.ghosts.posOther[id].pos = this.pos(otherServerPos);
         }
         if (this.clientSmoothing && otherPastPos && otherTargetPos) { //Meets the conditions to do lerp, if not we assume we will have more data next server update or smoothing is off
@@ -669,24 +663,24 @@ gameCore.prototype.clientProcessNetUpdates=function() {
       }
     }
     //Called if we aren't predicting client movement, update position of current client from server
-    if(!this.clientPredict && !this.naiveApproach) {
+    if (!this.clientPredict && !this.naiveApproach) {
       var myServerPos = latestServerData.pl[this.socket.userID].pos;
       var myTarget = target.pl[this.socket.userID];
       //Why would we not exist in the future?
       var myPast = previous.pl[this.socket.userID];
-      var myTargetPos,myPastPos;
-      if(myTarget&&myPast){
-        myTargetPos=myTarget.pos;
-        myPastPos=myPast.pos;
-      } else{ //We didn't exist in the past or in the future (because of a disconnect/reconnect)
-        myTargetPos=myServerPos;
-        myPastPos=myServerPos
+      var myTargetPos, myPastPos;
+      if (myTarget && myPast) {
+        myTargetPos = myTarget.pos;
+        myPastPos = myPast.pos;
+      } else { //We didn't exist in the past or in the future (because of a disconnect/reconnect)
+        myTargetPos = myServerPos;
+        myPastPos = myServerPos;
       }
 
       this.ghosts.serverPosSelf.pos = this.pos(myServerPos); //Snap ghost to new server pos
       var localTarget = this.vLerp(myPastPos, myTargetPos, timePoint);
 
-      if(this.clientSmoothing) {
+      if (this.clientSmoothing) {
         this.players[this.socket.userID].pos = this.vLerp(this.players[this.socket.userID].pos, localTarget, this._pdt * this.clientSmooth);
       } else {
         this.players[this.socket.userID].pos = this.pos(localTarget);
@@ -698,23 +692,23 @@ gameCore.prototype.clientProcessNetUpdates=function() {
  * Process updates from the server
  * @param data update packet received from the server
  */
-gameCore.prototype.clientOnServerUpdateReceived=function(data) {
+GameCore.prototype.clientOnServerUpdateReceived = function (data) {
   this.serverTime = data.t; //Server time (can be used to calc latency)
   this.clientTime = this.serverTime - (this.netOffset / 1000); //Latency Offset
 
   var pl = []; //Process data (can't send associative array over socketIO, so I number it then restore it here
-  for(var x=0;x<data.pl.length;x++){
+  for (var x = 0; x < data.pl.length; x++) {
     pl[data.pl[x].id] = {pos: data.pl[x].pos, is: data.pl[x].is};
-    if(!this.players[data.pl[x].id]) { //New player since last update
-      console.warn('Extra player on server! '+data.pl[x].id);
+    if (!this.players[data.pl[x].id]) { //New player since last update
+      console.warn('Extra player on server! ' + data.pl[x].id);
     }
   }
-  if(this.serverUpdates.length===0){ //Upon first tick, update position from server
+  if (this.serverUpdates.length === 0) { //Upon first tick, update position from server
     this.players[this.socket.userID].currentState.pos = this.pos(pl[this.socket.userID].pos);
   }
-  if(this.naiveApproach) {
-    for(var key in this.players) {
-      if(this.players.hasOwnProperty(key)){
+  if (this.naiveApproach) {
+    for (var key in this.players) {
+      if (this.players.hasOwnProperty(key)) {
         this.players[key].pos = this.pos(pl[key].pos);
       }
     }
@@ -723,7 +717,7 @@ gameCore.prototype.clientOnServerUpdateReceived=function(data) {
     this.serverUpdates.push({pl: pl, t: data.t}); //Add the formatted packet to the array
 
     //Limit buffer in seconds of updates 60fps*bufferSeconds=samples
-    if(this.serverUpdates.length>=(60*this.bufferSize)) {
+    if (this.serverUpdates.length >= (60 * this.bufferSize)) {
       this.serverUpdates.splice(0, 1);
     }
     this.oldestTick = this.serverUpdates[0].t; //If the client gets behind this due to latency, we snap them to the latest tick (only if connection is really bad)
@@ -733,8 +727,8 @@ gameCore.prototype.clientOnServerUpdateReceived=function(data) {
 /**
  * Update client position and states
  */
-gameCore.prototype.clientUpdateLocalPosition=function() {
-  if(this.clientPredict) {
+GameCore.prototype.clientUpdateLocalPosition = function () {
+  if (this.clientPredict) {
     var t = (this.localTime - this.players[this.socket.userID].stateTime) / this._pdt; //Time since updated state
     var oldState = this.players[this.socket.userID].oldState.pos;
     var currentState = this.players[this.socket.userID].currentState.pos;
@@ -746,11 +740,11 @@ gameCore.prototype.clientUpdateLocalPosition=function() {
 /**
  * Calculate Physics clientside
  */
-gameCore.prototype.clientUpdatePhysics=function() {
+GameCore.prototype.clientUpdatePhysics = function () {
   this.clientHandleInput();
   this.clientUpdateLocalPosition();
 
-  if(this.clientPredict) {
+  if (this.clientPredict) {
     //Fetch the direction from input buffer and use it to smooth visuals
     var self = this.players[this.socket.userID];
     self.oldState.pos = this.pos(self.currentState.pos);
@@ -763,36 +757,36 @@ gameCore.prototype.clientUpdatePhysics=function() {
  * Client Update Loop
  *  Draw, Input, Physics
  */
-gameCore.prototype.clientUpdate=function() {
-  if(!fakeClient) {
+GameCore.prototype.clientUpdate = function () {
+  if (!fakeClient) {
     this.ctx.clearRect(0, 0, 720, 480);
     this.clientDrawInfo();
     this.clientDrawServer();
   }
-  if(!this.naiveApproach) {
+  if (!this.naiveApproach) {
     this.clientProcessNetUpdates();
   }
-  for(var key in this.players){
-    if(this.players.hasOwnProperty(key) && key!==this.socket.userID) { //Draw all other players
+  for (var key in this.players) {
+    if (this.players.hasOwnProperty(key) && key !== this.socket.userID) { //Draw all other players
       this.players[key].draw();
     }
   }
   this.clientUpdateLocalPosition();
   this.players[this.socket.userID].draw(); //Draw after others to be smoother I think.
 
-  if(this.showDestPos&&!this.naiveApproach) {
-    for(var key in this.ghosts.posOther){
-      if(this.ghosts.posOther.hasOwnProperty(key)){
-        this.ghosts.posOther[key].draw(); //Draw Other Ghost
+  if (this.showDestPos && !this.naiveApproach) {
+    for (var key1 in this.ghosts.posOther) {
+      if (this.ghosts.posOther.hasOwnProperty(key1)) {
+        this.ghosts.posOther[key1].draw(); //Draw Other Ghost
       }
     }
 
   }
-  if(this.showServerPos&&!this.naiveApproach) {
+  if (this.showServerPos && !this.naiveApproach) {
     this.ghosts.serverPosSelf.draw(); //Draw our ghost
-    for(var key in this.ghosts.serverPosOther){
-      if(this.ghosts.serverPosOther.hasOwnProperty(key)){
-        this.ghosts.serverPosOther[key].draw();
+    for (var key2 in this.ghosts.serverPosOther) {
+      if (this.ghosts.serverPosOther.hasOwnProperty(key2)) {
+        this.ghosts.serverPosOther[key2].draw();
       }
     }
   }
@@ -801,7 +795,7 @@ gameCore.prototype.clientUpdate=function() {
 /**
  * Create Timer to update deltas
  */
-gameCore.prototype.createTimer=function() {
+GameCore.prototype.createTimer = function () {
   setInterval(function () {
     this._dt = new Date().getTime() - this._dte;
     this._dte = new Date().getTime();
@@ -811,7 +805,7 @@ gameCore.prototype.createTimer=function() {
 /**
  * Create Timer to update physics simulation
  */
-gameCore.prototype.createPhysicsSimulation=function() {
+GameCore.prototype.createPhysicsSimulation = function () {
   setInterval(function () {
     this._pdt = (new Date().getTime() - this._pdte) / 1000.0;
     this._pdte = new Date().getTime();
@@ -821,7 +815,7 @@ gameCore.prototype.createPhysicsSimulation=function() {
 /**
  * Make a ping between the client and server every second to ensure they are connected
  */
-gameCore.prototype.clientCreatePingTimer=function() {
+GameCore.prototype.clientCreatePingTimer = function () {
   setInterval(function () {
     this.lastPingTime = new Date().getTime() - this.fakeLag;
     this.socket.send('p.' + (this.lastPingTime)); //'p' for ping
@@ -831,7 +825,7 @@ gameCore.prototype.clientCreatePingTimer=function() {
  * Setup Client Configuration
  * Initialize Client Vars
  */
-gameCore.prototype.clientCreateConfiguration=function() {
+GameCore.prototype.clientCreateConfiguration = function () {
   this.showHelp = false; //Help Text
   this.naiveApproach = false; //Naive Approach being poor netcode
   this.showServerPos = false;
@@ -866,7 +860,7 @@ gameCore.prototype.clientCreateConfiguration=function() {
 /**
  * Create Debug dat.GUI
  */
-gameCore.prototype.clientCreateDebugGui=function() {
+GameCore.prototype.clientCreateDebugGui = function () {
   this.gui = new dat.GUI();
 
   var _playerSettings = this.gui.addFolder('Your Settings');
@@ -912,7 +906,7 @@ gameCore.prototype.clientCreateDebugGui=function() {
  * Handle Current Client Joining a Game
  * @param data  Parsed Data from Server
  */
-gameCore.prototype.clientOnJoinGame=function(gameID,gameTime) {
+GameCore.prototype.clientOnJoinGame = function (gameID, gameTime) {
   var self = this.players[this.socket.userID];
   self.infoColor = '#00bb00';
   self.color = this.color;
@@ -927,7 +921,7 @@ gameCore.prototype.clientOnJoinGame=function(gameID,gameTime) {
  * Server gave us a game
  * @param data  Parsed Data from Server
  */
-gameCore.prototype.clientOnConnected=function(data) {
+GameCore.prototype.clientOnConnected = function (data) {
   var self = this.players[this.socket.userID];
   self.id = data.id;
   self.infoColor = '#cc0000';
@@ -944,17 +938,17 @@ gameCore.prototype.clientOnConnected=function(data) {
  * Create player on client
  * @param id id of player
  */
-gameCore.prototype.clientCreateNewPlayer = function (id) {
-  this.players[id] = new gamePlayer(this);
-  if(id!=0){ //They were assigned an id, meaning they are online
+GameCore.prototype.clientCreateNewPlayer = function (id) {
+  this.players[id] = new GamePlayer(this);
+  if (id !== 0) { //They were assigned an id, meaning they are online
     this.players[id].online = true;
     this.players[id].state = 'connected';
   }
 
-  if(this.socket.userID!==id) { //If we aren't the client player create ghosts
-    this.ghosts.posOther[id] = new gamePlayer(this);
+  if (this.socket.userID !== id) { //If we aren't the client player create ghosts
+    this.ghosts.posOther[id] = new GamePlayer(this);
     this.ghosts.posOther[id].infoColor = 'rgba(255,255,255,0.1)';
-    this.ghosts.serverPosOther[id] = new gamePlayer(this);
+    this.ghosts.serverPosOther[id] = new GamePlayer(this);
     this.ghosts.serverPosOther[id].infoColor = 'rgba(255,255,255,0.2)';
     this.ghosts.posOther[id].state = 'destPos';
     this.ghosts.serverPosOther[id].state = 'serverPos';
@@ -963,10 +957,10 @@ gameCore.prototype.clientCreateNewPlayer = function (id) {
   }
 
 };
-gameCore.prototype.clientRemovePlayer=function(id) {
+GameCore.prototype.clientRemovePlayer = function (id) {
   delete this.players[id];
 
-  if(this.socket.userID!==id){ //if we aren't the client player, remove the ghosts
+  if (this.socket.userID !== id) { //if we aren't the client player, remove the ghosts
     delete this.ghosts.posOther[id];
     delete this.ghosts.serverPosOther[id];
   }
@@ -975,14 +969,14 @@ gameCore.prototype.clientRemovePlayer=function(id) {
  * Called when the other client changes its color
  * @param color  Parsed Data from Server
  */
-gameCore.prototype.clientOnOtherClientColorChange=function(id,color) {
+GameCore.prototype.clientOnOtherClientColorChange = function (id, color) {
   this.players[id].color = color;
 };
 /**
  * Add player who has connected to the server
  * @param otherID id of player who has connected
  */
-gameCore.prototype.clientOnOtherClientJoinGame = function (otherID,color) {
+GameCore.prototype.clientOnOtherClientJoinGame = function (otherID, color) {
   this.createNewPlayer({userID: otherID});
   this.players[otherID].color = color;
 };
@@ -990,41 +984,41 @@ gameCore.prototype.clientOnOtherClientJoinGame = function (otherID,color) {
  * Remove player who has disconnected from the server
  * @param otherID id of player that disconnected
  */
-gameCore.prototype.clientOnOtherClientDisconnect=function(otherID) {
+GameCore.prototype.clientOnOtherClientDisconnect = function (otherID) {
   this.removePlayer({userID: otherID});
 };
 /**
  * Upon being pinged by server
  * @param data  Parsed Data from Server
  */
-gameCore.prototype.clientOnPing=function(data) {
+GameCore.prototype.clientOnPing = function (data) {
   this.netPing = new Date().getTime() - parseFloat(data);
   this.netLatency = this.netPing / 2;
-  this.netOffset = Math.max(1,this.netPing); //Calculate command offset on server based on ping to server
+  this.netOffset = Math.max(1, this.netPing); //Calculate command offset on server based on ping to server
 };
 /**
  * Called when any message from a server is received
  * @param data server packet received
  */
-gameCore.prototype.clientOnNetMessage=function(data) {
+GameCore.prototype.clientOnNetMessage = function (data) {
   var command = data.split('.'); //'.' delimits commands
   switch (command[0]) {
     case 's': //Server Message
       switch (command[1]) {
         case 'y': //You (a message about our current player)
-          switch(command[2]){
+          switch (command[2]) {
             case 'j': //We are joining a lobby
               this.clientOnJoinGame(command[3], command[4]); //GameID, ServerTime
               break;
           }
           break;
         case 'pl': //Players (a message about another player in our game)
-          switch(command[2]){
+          switch (command[2]) {
             case 'j': //A player is joining
-              this.clientOnOtherClientJoinGame(command[3],command[4]); //userID, color
+              this.clientOnOtherClientJoinGame(command[3], command[4]); //userID, color
               break;
             case 'c': //Other player color changed
-              this.clientOnOtherClientColorChange(command[4],command[3]); //client id that changed, color
+              this.clientOnOtherClientColorChange(command[4], command[3]); //client id that changed, color
               break;
             case 'd': //Other player disconnected
               this.clientOnOtherClientDisconnect(command[3]);
@@ -1044,15 +1038,15 @@ gameCore.prototype.clientOnNetMessage=function(data) {
  * Called once the client is requested to disconnect because the game is over
  * @param data data from disconnect command
  */
-gameCore.prototype.clientOnDisconnect=function(data) {
+GameCore.prototype.clientOnDisconnect = function (data) {
   //We don't know if the other player is still connected, we arent so everything goes offline
   var self = this.players[this.socket.userID];
   self.infoColor = 'rgba(255,255,255,0.1)';
   self.state = 'not-connected';
   self.online = false;
 
-  for(var key in this.players){
-    if(this.players.hasOwnProperty(key) && key!==this.socket.userID) {
+  for (var key in this.players) {
+    if (this.players.hasOwnProperty(key) && key !== this.socket.userID) {
       this.removePlayer({userID: key});
       this.serverUpdates = [];
     }
@@ -1061,8 +1055,8 @@ gameCore.prototype.clientOnDisconnect=function(data) {
 /**
  * Handle Connecting to the server
  */
-gameCore.prototype.clientConnectToServer=function() {
-  if(fakeClient)
+GameCore.prototype.clientConnectToServer = function () {
+  if (fakeClient)
     this.socket = require('../test/testUtils').connect();
   else
     this.socket = io.connect();
@@ -1081,35 +1075,35 @@ gameCore.prototype.clientConnectToServer=function() {
 /**
  * Calculate FPS
  */
-gameCore.prototype.clientRefreshFPS= function () {
+GameCore.prototype.clientRefreshFPS = function () {
   //Store the fps for 10 frames
   this.fps = 1 / this.dt;
   this.fpsAvgAcc += this.fps;
   this.fpsAvgCount++;
 
-  if(this.fpsAvgCount>=10) {
+  if (this.fpsAvgCount >= 10) {
     this.fpsAvg = this.fpsAvgAcc / 10;
     this.fpsAvgCount = 1;
     this.fpsAvgAcc = this.fps;
   }
 };
 
-gameCore.prototype.clientDrawInfo=function() {
+GameCore.prototype.clientDrawInfo = function () {
   this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
-  if(this.showHelp) {
-    this.ctx.fillText('netOffset : local offset between players and their server updates.', 10 , 30);
-    this.ctx.fillText('serverTime : last known game time on server', 10 , 70);
-    this.ctx.fillText('clientTime : delayed game time on client for other players only (includes the net_offset)', 10 , 90);
-    this.ctx.fillText('netLatency : Time from you to the server. ', 10 , 130);
-    this.ctx.fillText('netPing : Time from you to the server and back. ', 10 , 150);
-    this.ctx.fillText('fakeLag : Add fake ping/lag for testing, applies only to your inputs (watch server_pos block!). ', 10 , 170);
-    this.ctx.fillText('clientSmoothing/clientSmooth : When updating players information from the server, it can smooth them out.', 10 , 210);
-    this.ctx.fillText(' This only applies to other clients when prediction is enabled, and applies to local player with no prediction.', 170 , 230);
+  if (this.showHelp) {
+    this.ctx.fillText('netOffset : local offset between players and their server updates.', 10, 30);
+    this.ctx.fillText('serverTime : last known game time on server', 10, 70);
+    this.ctx.fillText('clientTime : delayed game time on client for other players only (includes the net_offset)', 10, 90);
+    this.ctx.fillText('netLatency : Time from you to the server. ', 10, 130);
+    this.ctx.fillText('netPing : Time from you to the server and back. ', 10, 150);
+    this.ctx.fillText('fakeLag : Add fake ping/lag for testing, applies only to your inputs (watch server_pos block!). ', 10, 170);
+    this.ctx.fillText('clientSmoothing/clientSmooth : When updating players information from the server, it can smooth them out.', 10, 210);
+    this.ctx.fillText(' This only applies to other clients when prediction is enabled, and applies to local player with no prediction.', 170, 230);
   }
   this.ctx.fillStyle = 'rgba(255,255,255,1)'; //Reset fillstyle
 };
-gameCore.prototype.clientDrawServer = function () {
-  if(!this.instance){
+GameCore.prototype.clientDrawServer = function () {
+  if (!this.instance) {
     return;
   }
   this.ctx.fillStyle = 'rgba(255,255,255,0.5)';

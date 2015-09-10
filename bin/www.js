@@ -1,4 +1,4 @@
-#!/usr/bin/env node
+//#!/usr/bin/env node
 
 /**
  * Module dependencies.
@@ -34,14 +34,14 @@ server.on('error', onError);
 server.on('listening', onListening);
 
 /*
-Setup Socket.io Server
+ Setup Socket.io Server
  */
 var sio = io(server);
 app.sio = sio;
 setupSocketIO(sio);
 
 /*
-Setup Game Server
+ Setup Game Server
  */
 
 var gameServer = require('../server/gameServer');
@@ -76,28 +76,28 @@ function setupGameServer(server) {
  * Configure stdin to call runCommand() and sets up commands
  * @param gameServer server to apply commands to
  */
-function setupCommandLine(gameServer){
+function setupCommandLine(gameServer) {
   process.stdin.setEncoding('utf8');
 
-  process.stdin.on('readable', function() {
+  process.stdin.on('readable', function () {
     var chunk = process.stdin.read();
     if (chunk !== null) {
       runCommand(chunk);
     }
   });
 
-  process.stdin.on('end', function() {
+  process.stdin.on('end', function () {
     debug('Stdin has ended');
   });
 
   //Setup commands
 
   addCommand('help', 'Displays a list of all commands. If supplied a command will only show help for that command', function (args) {
-    var output = "";
-    for(var i=0;i<commands.length;i++){
+    var output = '';
+    for (var i = 0; i < commands.length; i++) {
       var command = commands[i];
-      if((args[0]===command.command)||!args[0]) //If we have a first argument, only show help for that. Otherwise show help for everything
-        output += command.command + ": " + command.description+"\n";
+      if ((args[0] === command.command) || !args[0]) //If we have a first argument, only show help for that. Otherwise show help for everything
+        output += command.command + ': ' + command.description + '\n';
     }
     console.log(output);
   });
@@ -105,19 +105,19 @@ function setupCommandLine(gameServer){
     var games = gameServer.games;
     var num = 1;
 
-    var output = "Currently " + gameServer.gameCount + " game"+(gameServer.gameCount!==1?"s":"")+".\n";
-    for(var gameID in games){
-      if(games.hasOwnProperty(gameID)){
+    var output = 'Currently ' + gameServer.gameCount + ' game' + (gameServer.gameCount !== 1 ? 's' : '') + '.\n';
+    for (var gameID in games) {
+      if (games.hasOwnProperty(gameID)) {
         var game = games[gameID];
-        if(!args[0]||args[0]==num) //If argument supplied only show that number, otherwise show all games
-          output += "\t"+ (!args[0]?(num+ ") "):"") + game.id + ": (" + game.playerCount + "/" + game.playerCapacity + ")\n";
-        if(args[0]==num){
+        if (!args[0] || args[0] == num) //If argument supplied only show that number, otherwise show all games
+          output += '\t' + (!args[0] ? (num + ') ') : '') + game.id + ': (' + game.playerCount + '/' + game.playerCapacity + ')\n';
+        if (args[0] == num) {
           var pcount = 1;
-          output += "\tPlayers: \n";
-          for(var player in game.players){
+          output += '\tPlayers: \n';
+          for (var player in game.players) {
 
-            if(game.players.hasOwnProperty(player)){
-              output += "\t\t" + pcount + ") " + game.players[player].userID;
+            if (game.players.hasOwnProperty(player)) {
+              output += '\t\t' + pcount + ') ' + game.players[player].userID;
 
               pcount++;
             }
@@ -135,17 +135,17 @@ function setupCommandLine(gameServer){
  */
 function runCommand(msg) {
   msg = msg.trim();
-  var args = msg.split(" ");
-  if(args.length===0)
+  var args = msg.split(' ');
+  if (args.length === 0)
     return;
-  for(var i=0;i<commands.length;i++){
+  for (var i = 0; i < commands.length; i++) {
     var command = commands[i];
-    if(args[0]===command.command){
-      command.callback(args.splice(1, args.length-1)); //Give everything as an argument except command
+    if (args[0] === command.command) {
+      command.callback(args.splice(1, args.length - 1)); //Give everything as an argument except command
       return;
     }
   }
-  console.log('No command found.')
+  console.log('No command found.');
 }
 /**
  * Add command to respond to input
@@ -153,14 +153,14 @@ function runCommand(msg) {
  * @param description description of what the command does to be used for help text
  * @param callback function to call when command is run (will be given arguments)
  */
-function addCommand (str,description, callback) {
+function addCommand(str, description, callback) {
   commands.push({command: str, description: description, callback: callback});
-};
+}
 /**
  * Setup Socket.IO Listener
  */
 
-function setupSocketIO(sio){
+function setupSocketIO(sio) {
   sio.set('authorization', function (handshakeData, callback) {
     // make sure the handshake data looks good
     callback(null, true); // error first, 'authorized' boolean second
@@ -196,9 +196,7 @@ function onError(error) {
     throw error;
   }
 
-  var bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  var bind = typeof port === 'string' ? 'Pipe ' + port : 'Port ' + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
@@ -221,9 +219,7 @@ function onError(error) {
 
 function onListening() {
   var addr = server.address();
-  var bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr.port;
+  var bind = typeof addr === 'string' ? 'pipe ' + addr : 'port ' + addr.port;
   debug('Listening on ' + bind);
 }
 

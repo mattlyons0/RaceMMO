@@ -3,16 +3,16 @@
  * Tests shared/gameCore.js
  */
 require('should');
-var utils=require('./testUtils');
-var debug = require('debug')('RaceMMO:test:gameCore');
-var app=require('../bin/www'); //Start Server just for the tests
+var utils = require('./testUtils');
+var debug = require('debug')('RaceMMO:test:GameCore');
+var app = require('../bin/www'); //Start Server just for the tests
 var gameCore = require('../shared/gameCore');
 var game;
 
 describe('Game Core Client', function () {
 
   beforeEach(function () {
-    game = new gameCore(undefined, true); //Tell them we are a fake client
+    game = new GameCore(undefined, true); //Tell them we are a fake client
   });
   afterEach(function () {
     game.socket.disconnect();
@@ -20,7 +20,7 @@ describe('Game Core Client', function () {
 
   it('should initialize clients properly', function (done) {
     game.server.should.be.false();
-    game.should.have.property("world");
+    game.should.have.property('world');
     game.playerSpeed.should.be.above(0); //Positive
     game.should.have.property('serverUpdates');
     game.should.have.property('socket');
@@ -78,10 +78,10 @@ describe('Game Core Client', function () {
 
                   done();
                 }, 35);
-              }, 35)
-            }, 35)
+              }, 35);
+            }, 35);
           }, 35);
-        }, 35)
+        }, 35);
       }, 35);
     }, 40);
   });
@@ -109,7 +109,7 @@ describe('Game Core Client', function () {
     game.keyboard = {};
     var pressed = false;
     game.keyboard.pressed = function (key) {
-      if (!pressed && key === "left") {
+      if (!pressed && key === 'left') {
         pressed = true;
         return true;
       }
@@ -145,23 +145,23 @@ describe('Game Core Client', function () {
   });
 
   it('should change color on both clients', function (done) {
-    var game2 = new gameCore(undefined, true);
+    var game2 = new GameCore(undefined, true);
     game2.socket.on('message', function (msg) {
       debug(msg);
       if (msg.startsWith('s.pl.c.')) {
         game2.socket.disconnect();
 
-        msg.should.containEql("#000000");
+        msg.should.containEql('#000000');
         done();
       }
     });
     game.players[game.socket.userID].color = '#000000';
-    game.socket.send('c.'+game.players[game.socket.userID].color);
+    game.socket.send('c.' + game.players[game.socket.userID].color);
   });
 
-  it('should process server updates correctly',function(done) {
+  it('should process server updates correctly', function (done) {
     var player1 = game.socket.userID;
-    var player2 = new gameCore(undefined,true);
+    var player2 = new GameCore(undefined, true);
 
     var firstUpdate = true;
     var test1 = false, test2 = false;
@@ -174,13 +174,12 @@ describe('Game Core Client', function () {
         var player = data.pl[i];
         if (player.id === player1) {
           player.pos.should.eql(game.players[player1].pos);
-        }
-        else if (player.id === player2.id) {
+        } else if (player.id === player2.id) {
           player.pos.should.eql(player2.pos);
         }
       }
       test1 = true;
-      if(test2===true) {
+      if (test2 === true) {
         player2.socket.disconnect();
         done();
       }
@@ -188,12 +187,12 @@ describe('Game Core Client', function () {
 
     //Test converting into an associative array from socketIO regular array
     setTimeout(function () {
-      player1=game.socket.userID;
-      var update=game.serverUpdates[game.serverUpdates.length-1]; //Get most recent update
+      player1 = game.socket.userID;
+      var update = game.serverUpdates[game.serverUpdates.length - 1]; //Get most recent update
       update.pl[player1].should.have.property('pos');
       update.pl[player2.socket.userID].should.have.property('pos');
       test2 = true;
-      if(test1===true) {
+      if (test1 === true) {
         player2.socket.disconnect();
         done();
       }
@@ -217,7 +216,7 @@ describe('Game Core Client', function () {
       item.pos.x = maxX - 0.0001;
       var cloneI = clone(item);
       game.checkCollision(cloneI);
-      debug(item.pos.x + " " + cloneI.pos.x);
+      debug(item.pos.x + ' ' + cloneI.pos.x);
       item.pos.x.should.equal(cloneI.pos.x);
       item.pos.y.should.equal(cloneI.pos.y);
 
@@ -243,13 +242,13 @@ describe('Game Core Client', function () {
       cloneI.pos.y.should.equal(maxY);
 
       done();
-    },15); //Skip first tick
+    }, 15); //Skip first tick
 
   });
 
   it('should process network updates correctly', function (done) {
     game.update(new Date().getTime());
-    var game2 = new gameCore(undefined, true);
+    var game2 = new GameCore(undefined, true);
     var client2 = game2.socket;
     simulateKeypress(game2, ['u', 'r', 'r', 'r']);
     setTimeout(function () {
@@ -261,8 +260,8 @@ describe('Game Core Client', function () {
       //Linear interpolation between the last 2 server updates for the other client (the non host)
       game.ghosts.posOther[client2.userID].pos.x.should.be.approximately(game.vLerp(previous.pl[client2.userID].pos, target.pl[client2.userID].pos, ((game.targetTime - game.clientTime) / (target.t - previous.t)).fixed(3)).x, 5); //Completely based upon timing, this the approximately
       game.ghosts.posOther[client2.userID].pos.y.should.be.approximately(game.vLerp(previous.pl[client2.userID].pos, target.pl[client2.userID].pos, ((game.targetTime - game.clientTime) / (target.t - previous.t)).fixed(3)).y, 5);
-      game.players[client2.userID].pos.x.should.be.approximately(game.vLerp(game.players[client2.userID].pos, game.ghosts.posOther[client2.userID].pos, game._pdt * game.clientSmooth).x,15);
-      game.players[client2.userID].pos.y.should.be.approximately(game.vLerp(game.players[client2.userID].pos, game.ghosts.posOther[client2.userID].pos, game._pdt * game.clientSmooth).y,15);
+      game.players[client2.userID].pos.x.should.be.approximately(game.vLerp(game.players[client2.userID].pos, game.ghosts.posOther[client2.userID].pos, game._pdt * game.clientSmooth).x, 15);
+      game.players[client2.userID].pos.y.should.be.approximately(game.vLerp(game.players[client2.userID].pos, game.ghosts.posOther[client2.userID].pos, game._pdt * game.clientSmooth).y, 15);
       //Client smoothing
 
       client2.disconnect();
@@ -275,12 +274,12 @@ describe('Game Core Server', function () {
   it('should initialize properly', function (done) {
     utils.connect(function (client) {
       var game = app.gameServer.recentGame;
-      var core = game.gameCore;
+      var core = game.GameCore;
       core.instance.should.eql(game);
       core.server.should.equal(true);
       var userID;
-      for(var player in game.players){
-        if(game.players.hasOwnProperty(player)){
+      for (var player in game.players) {
+        if (game.players.hasOwnProperty(player)) {
           userID = player;
           break;
         }
@@ -294,7 +293,7 @@ describe('Game Core Server', function () {
 
   it('should update physics properly', function (done) { //Merely tests physics timing update
     utils.connect(function (client) {
-      var core = app.gameServer.recentGame.gameCore;
+      var core = app.gameServer.recentGame.GameCore;
       setTimeout(function () { //Avoid first tick
         var oldpdt = core._pdte;
         setTimeout(function () {
@@ -308,9 +307,9 @@ describe('Game Core Server', function () {
   });
 
   it('should process inputs correctly', function (done) {
-    game = new gameCore(undefined, true); //Tell them we are a fake client
+    game = new GameCore(undefined, true); //Tell them we are a fake client
     game.socket.on('connect', function () {
-      var core = app.gameServer.recentGame.gameCore;
+      var core = app.gameServer.recentGame.GameCore;
       setTimeout(function () { //First Physics Tick
         simulateKeypress(game, ['d']);
         var oldState = core.players[game.socket.userID].pos;
@@ -341,7 +340,7 @@ describe('Game Core Server', function () {
 
   it('should update time correctly', function (done) {
     utils.connect(function (client) {
-      var core = app.gameServer.recentGame.gameCore;
+      var core = app.gameServer.recentGame.GameCore;
       setTimeout(function () { //Avoid First Tick
         var localTime = core.serverTime;
         setTimeout(function () {
@@ -357,30 +356,29 @@ describe('Game Core Server', function () {
   it('should send updates to clients properly', function (done) {
     var isDone = false;
     utils.connect(function (client) {
-      var core = app.gameServer.recentGame.gameCore;
+      var core = app.gameServer.recentGame.GameCore;
       var called = false;
       client.on('onserverupdate', function (update) {
-        if(called===true) return;
+        if (called === true) return;
         called = true;
-        update.pl.length.should.be.approximately(1,1);
+        update.pl.length.should.be.approximately(1, 1);
         var id;
-        for(var player in core.players){
-          if(core.players.hasOwnProperty(player)){
+        for (var player in core.players) {
+          if (core.players.hasOwnProperty(player)) {
             id = player;
             break;
           }
         }
         update.pl[0].pos.should.eql(core.players[player].pos);
-        update.t.should.be.approximately(core.serverTime,0.25); //Should be within a quarter of a second of eachother (there should be little/no latency)
+        update.t.should.be.approximately(core.serverTime, 0.25); //Should be within a quarter of a second of eachother (there should be little/no latency)
 
         var client2 = utils.connect();
         client2.on('onserverupdate', function (msg) {
-          for(var i=0;i<msg.pl.length;i++){
-            var player=msg.pl[i];
-            if(player.id===id){
+          for (var i = 0; i < msg.pl.length; i++) {
+            var player = msg.pl[i];
+            if (player.id === id) {
               player.pos.should.eql(core.players[player.id].pos);
-            }
-            else if(player.id===client2.userID){
+            } else if (player.id === client2.userID) {
               update.pos.should.eql(core.players[client2.userID].pos);
             }
           }
@@ -392,8 +390,8 @@ describe('Game Core Server', function () {
         });
       });
     });
-    var interval=setInterval(function () { //Ensure done isn't called twice because that crashes mocha
-      if(isDone===true) {
+    var interval = setInterval(function () { //Ensure done isn't called twice because that crashes mocha
+      if (isDone === true) {
         done();
         clearInterval(interval);
       }
@@ -401,6 +399,6 @@ describe('Game Core Server', function () {
   });
 });
 
-function simulateKeypress(game,key) {
+function simulateKeypress(game, key) {
   game.clientHandleInput(key);
 }

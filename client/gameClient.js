@@ -1,8 +1,8 @@
 //A window global for our game root variable
 var game = {};
 //when loading we store refs to our canvases and initialize a game instance
-window.onload=function() {
-  game = new gameCore(); //Create the game
+window.onload = function () {
+  game = new GameCore(); //Create the game
 
   game.viewport = document.getElementById('canvas');
 

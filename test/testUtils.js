@@ -1,4 +1,5 @@
-var debug = require('debug')('RaceMMO:test:testUtils')
+/*jshint loopfunc: true */
+var debug = require('debug')('RaceMMO:test:testUtils');
 var io = require('socket.io-client');
 var options = {
   transports: ['websocket'],
@@ -56,7 +57,7 @@ this.logMessages = function (clients, event, callback, debugEnabled) {
 
         if (client.messages.length >= expected) {
           if (debugEnabled) {
-            debug("Client " + index + " has met " + expected);
+            debug('Client ' + index + ' has met ' + expected);
           }
           for (var x = 0; x <= clients.length; x++) {
             if (x === clients.length) {
