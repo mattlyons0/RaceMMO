@@ -1,3 +1,5 @@
+'use strict';
+
 //A window global for our game root variable
 var game = {};
 //when loading we store refs to our canvases and initialize a game instance

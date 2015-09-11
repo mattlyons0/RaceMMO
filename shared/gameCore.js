@@ -1,3 +1,5 @@
+'use strict';
+
 /**
  * Runs on both client and server
  *

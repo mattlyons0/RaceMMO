@@ -1,3 +1,5 @@
+'use strict';
+
 var gameServer = {games: {}, gameCount: 0, recentGame: undefined};
 
 var uuid = require('node-uuid');

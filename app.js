@@ -21,7 +21,7 @@ setupTooBusy();
 setupCompression();
 setupPaths();
 setupErrorHandlers();
-if(typeof process === 'function') //Don't crash when running mocha
+if (typeof process === 'function') //Don't crash when running mocha
   process.on('SIGINT', shutdown); //Gracefully Shutdown
 
 function setupJade() {
@@ -57,7 +57,7 @@ function setupTooBusy() {
 function setupCompression() {
   app.use(compression()); //Compress pages using express' built in compression DEFAULTS TO 8/10 RAM USAGE
 
-  if(app.get('env')!=='development') {
+  if (app.get('env') !== 'development') {
     app.use(minify( //Minify css and js
       {
         cache: false //WARNING WILL CACHE IN RAM
@@ -66,9 +66,9 @@ function setupCompression() {
   }
 }
 
-function setupErrorHandlers(){
+function setupErrorHandlers() {
   // catch 404 and forward to error handler
-  app.use(function(req, res, next) {
+  app.use(function (req, res, next) {
     var err = new Error('Not Found');
     err.status = 404;
     next(err);
@@ -79,21 +79,21 @@ function setupErrorHandlers(){
   // development error handler
   // will print stacktrace
   if (app.get('env') === 'development') {
-    app.use(function(err, req, res, next) {
+    app.use(function (err, req, res, next) {
       this.renderError(err, res, true);
     });
   }
 
   // production error handler
   // no stacktraces leaked to user
-  app.use(function(err, req, res, next) {
+  app.use(function (err, req, res, next) {
     this.renderError(err, res, false);
   });
 
-  this.renderError=function renderError(err,res, devEnv) {
+  function renderError(err, res, devEnv) {
 
     res.status(err.status || 500);
-    if(err.message==='TooBusy'){
+    if (err.message === 'TooBusy') {
       res.render('tooBusy', {
         error: err
       });
@@ -110,7 +110,7 @@ function setupPaths() {
   // uncomment after placing your favicon in /public
   //app.use(favicon(__dirname + '/public/favicon.ico'));
   app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({ extended: false }));
+  app.use(bodyParser.urlencoded({extended: false}));
   app.use(cookieParser());
   app.use(express.static(path.join(__dirname, 'public'))); //Serve files from public
   app.use('/javascripts/game', express.static(__dirname + '/shared')); //Serve files from shared into public javascript folder
@@ -121,7 +121,7 @@ function setupPaths() {
 }
 
 //Manage shutdown gracefully
-var shutdown=function() {
+var shutdown = function () {
   debug('Received shutdown request. Server is shutting down...');
   app.sio.close();
   debug('Socket.IO Shutdown.');
