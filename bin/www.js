@@ -161,6 +161,9 @@ function addCommand(str, description, callback) {
  */
 
 function setupSocketIO(sio) {
+  sio.set('heartbeat interval', 1000); //1 sec interval to check if clients are alive
+  sio.set('heartbeat timeout', 5000); //5 sec timeout to drop dead clients if they are still dead
+
   sio.set('authorization', function (handshakeData, callback) {
     // make sure the handshake data looks good
     callback(null, true); // error first, 'authorized' boolean second
