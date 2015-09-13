@@ -1,7 +1,7 @@
 <ul>
     <h2>Bugs</h2>
     <ul>
-        <li>Fix occasionally joining a game that doesn't exist (can't reproduce)</li>
+        <li>No known bugs</li>
     </ul>
 
     <h2>Features</h2>
@@ -15,7 +15,6 @@
             <li>Migrate FakeLag from clientside to a serverside command</li>
         </ul>
         <li>Handle when javascript files fail to load on game page (or when javascript is disabled)</li>
-        <li>Fix random 503 on javascript files with 214 that seems to be related to either compression or minimization (too busy is catching files that are being compressed I would guess)</li>
         <li>Determine if setting netOffset using ping is proper or not</li>
 
         <h3>Long Term</h3>
@@ -31,6 +30,23 @@
             after <a href="http://stackoverflow.com/questions/16864259/how-to-run-bash-script-after-git-push">each commit</a></li>
         <li><a href="http://www.gamasutra.com/blogs/GustavoMaciel/20131229/207833/Generating_Procedural_Racetracks.php">Procedural Racetracks</a></li>
         <li>Bezier Curves <a href="http://www.sitepoint.com/html5-canvas-draw-bezier-curves/">(Ex1)</a> <a href="http://mathworld.wolfram.com/BezierCurve.html">(Ex2)</a></li>
+        <li>Create frontend</li>
+        <ul>
+            <li>Serve static pages using Nginx</li>
+            <li>Compress using Nginx</li>
+            <li><a href="http://www.newmediacampaigns.com/blog/Automatic-file-minification-on-nginx">Minify using Nginx</a></li>
+            <li>Cache static pages using Nginx</li>
+            <ul>
+                <li>Homepage</li>
+                <ul>
+                    <li>Use <a href="https://github.com/k33g/gh3">Github Javascript API</a> to display changelogs.</li>
+                    <li>Include Todo.html using ajax</li>
+                </ul>
+            </ul>
+        </ul>
+        <li>Create some way of merging lobbies</li>
+        <li>Add command to show load (and <a href="https://nodejs.org/api/readline.html#readline_readline_clearline_stream_dir">update</a> until command is exited with Q or something)</li>
+        <li>Create socketIO stress test</li>
 
         <h3>Possible Additions (if needed)</h3>
 
@@ -39,7 +55,8 @@
             <li>Use one module for the express server and a socketio node to hand over to the game node,
                 then use another module for the actual game (thus making them completely independant, so the webserver can't take down the gameserver</li>
         </ul>
-        <li>Separate GameServer from Webserver</li>
+        <li>Separate GameServer from Webserver (although webserver shouldn't be under much stress once Nginx is setup)</li>
         <li><a href="http://buildnewgames.com/optimizing-websockets-bandwidth/">Optimize Websocket Bandwidth</a></li>
+        <li>Investigate <a href="https://github.com/petkaantonov/bluebird/wiki/Optimization-killers">Optimization Killers</a></li>
         </ul>
 </ul>

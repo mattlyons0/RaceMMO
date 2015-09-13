@@ -5,8 +5,6 @@ var favicon = require('serve-favicon');
 var logger = require('morgan');
 var cookieParser = require('cookie-parser');
 var bodyParser = require('body-parser');
-var compression = require('compression');
-var minify = require('express-minify');
 var debug = require('debug')('RaceMMO:app');
 var error = require('debug')('RaceMMO:app:error');
 
@@ -18,7 +16,6 @@ var app = express();
 setupJade();
 setupMorgan();
 setupTooBusy();
-setupCompression();
 setupPaths();
 setupErrorHandlers();
 if (typeof process === 'function') //Don't crash when running mocha
@@ -35,7 +32,7 @@ function setupMorgan() {
   } else {
     app.use(logger('common', {
       skip: function (req, res) {
-        return res.statusCode < 400
+        return res.statusCode < 400;
       }
     }));
   }
@@ -45,7 +42,7 @@ function setupTooBusy() {
   //Block requests when server is overloaded
   app.use(function (req, res, next) {
     if (toobusy()) {
-      var err = new Error("TooBusy");
+      var err = new Error('TooBusy');
       err.status = 503;
       next(err);
 
@@ -53,17 +50,6 @@ function setupTooBusy() {
       next();
     }
   });
-}
-function setupCompression() {
-  app.use(compression()); //Compress pages using express' built in compression DEFAULTS TO 8/10 RAM USAGE
-
-  if (app.get('env') !== 'development') {
-    app.use(minify( //Minify css and js
-      {
-        cache: false //WARNING WILL CACHE IN RAM
-      }
-    ));
-  }
 }
 
 function setupErrorHandlers() {
