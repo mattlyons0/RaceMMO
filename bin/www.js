@@ -9,8 +9,10 @@ var debug = require('debug')('RaceMMO:server');
 var http = require('http');
 var io = require('socket.io');
 var uuid = require('node-uuid');
+var charm = require('charm')();
 
 var commands = [];
+var endCommand;
 /**
  * Get port from environment and store in Express.
  */
@@ -82,13 +84,22 @@ function setupCommandLine(gameServer) {
   process.stdin.on('readable', function () {
     var chunk = process.stdin.read();
     if (chunk !== null) {
-      runCommand(chunk);
+      if (!endCommand) {
+        runCommand(chunk);
+      } else {
+        endCommand();
+        endCommand = undefined;
+        if (process.stdin.isTTY)
+          process.stdin.setRawMode(false);
+      }
     }
   });
 
   process.stdin.on('end', function () {
     debug('Stdin has ended');
   });
+
+  charm.pipe(process.stdout);
 
   //Setup commands
 
@@ -102,6 +113,8 @@ function setupCommandLine(gameServer) {
     console.log(output);
   });
   addCommand('games', 'Display a list of ongoing games. If supplied a game number (from the list), will show extended details from that game.', function (args) {
+    var displayMode = args[0];
+    console.log(args);
     var games = gameServer.games;
     var num = 1;
 
@@ -127,6 +140,188 @@ function setupCommandLine(gameServer) {
       }
     }
     console.log(output);
+  });
+  addCommand('load', 'Display percent time used by each timer in each lobby. Can take argument of display mode: Inline (Default, updates itself), Full (Clears screen), WebStorm (Omits Header)', function (args) {
+    var loadTimers = [], deltas, physics, logics;
+
+    var lastNumGames = 0;
+    var displayMode; //full (clears every update), inline (updates only itself), webstorm (doesn't update header)
+    if (args[0]) {
+      displayMode = (args[0] + '').toLowerCase();
+    } else if (process.env.DEBUG_COLORS) { //Thats how we detect webstorm for now
+      displayMode = 'webstorm';
+    } else {
+      displayMode = 'inline';
+    }
+    var logInterval;
+    if (process.stdin.isTTY)
+      process.stdin.setRawMode(true);
+    endCommand = function () {
+      clearInterval(logInterval);
+      stopPopulation();
+      console.log('\nExited Load Manager');
+    };
+
+    populateData();
+
+    //Log Data
+    logInterval = setInterval(function () {
+      var count1 = 0;
+      for (var gameID1 in gameServer.games) { //Check if games list has changed since last update
+        if (gameServer.games.hasOwnProperty(gameID1)) {
+          count1++;
+          var found = false;
+          for (var gameID2 in deltas) {
+            if (deltas.hasOwnProperty(gameID2)) {
+              if (gameID2 === gameID1) {
+                found = true;
+                break;
+              }
+            }
+          }
+          if (found === false) {
+            populateData(); //Game list has updated!
+            return;
+          }
+        }
+      }
+      var count2 = 0;
+      for (var gameID in deltas) {
+        if (deltas.hasOwnProperty(gameID)) {
+          count2++;
+        }
+      }
+      if (count1 !== count2) {
+        populateData(); //Game list has a game that no longer exists
+        return;
+      }
+      //Write to console
+      if (displayMode === 'inline') {
+        charm.up(lastNumGames + 1); //Overwrite last log
+        charm.erase('down');
+      } else if (displayMode === 'full') {
+        charm.reset(); //Clear the terminal
+      }
+      if (displayMode !== 'webstorm') {
+        process.stdout.write('Game ID                              LogicDelta\tPhysicsDelta\tDelta\n');
+      }
+      lastNumGames = gameServer.gameCount;
+      //noinspection JSDuplicatedDeclaration
+      for (var gameID in deltas) {
+        if (deltas.hasOwnProperty(gameID)) {
+          //Calculate Averages
+          var logic = 0;
+          var physic = 0;
+          var delta = 0;
+          for (var x = 0; x < logics[gameID].length; x++) {
+            logic += logics[gameID][x];
+          }
+          logic /= logics[gameID].length; //Avg time in ms
+          logic /= GameCore.frameTime / 100;  //Percent time used (of total time given)
+
+          for (var x = 0; x < physics[gameID].length; x++) {
+            physic += physics[gameID][x];
+          }
+          physic /= physics[gameID].length; //Avg time in ms
+          physic /= GameCore.PHYSICS_UPDATE_TIME / 100; //Percent time used (of total time given)
+          for (var x = 0; x < deltas[gameID].length; x++) {
+            delta += deltas[gameID][x];
+          }
+          delta /= deltas[gameID].length; //Avg time in ms
+          delta /= GameCore.DELTA_UPDATE_TIME / 100;  //Percent time used (of total time given)
+
+          process.stdout.write(gameID + ' ');
+          charm.foreground(heatColor(logic));
+          process.stdout.write(logic.fixed(2) + '%\t');
+          charm.foreground(heatColor(physic));
+          process.stdout.write(physic.fixed(2) + '%\t\t');
+          charm.foreground(heatColor(delta));
+          process.stdout.write(delta.fixed(2) + '%\n');
+          charm.foreground('black');
+        }
+      }
+    }, 1000); //Log every 1000 seconds
+
+
+    function populateData() {
+      stopPopulation();
+
+      deltas = [];
+      physics = [];
+      logics = [];
+
+      for (var gameID in gameServer.games) {
+        if (gameServer.games.hasOwnProperty(gameID)) {
+          setupPopulateLoop(gameID, deltas, GameCore.DELTA_UPDATE_TIME);
+          setupPopulateLoop(gameID, physics, GameCore.PHYSICS_UPDATE_TIME);
+          setupPopulateLoop(gameID, logics, GameCore.frameTime);
+        }
+      }
+    }
+
+    function setupPopulateLoop(id, timer, updateTime) {
+      var core = gameServer.games[id].GameCore;
+      //Delta Timer
+      if (!timer[id]) {
+        timer[id] = [];
+      }
+      loadTimers.push(setInterval(function () {
+        if (!timer[id]) {
+          return;
+        }
+        timer[id].push(core._dt);
+        if (timer[id].length > (1000 / updateTime)) { //If we stored more than one second of history
+          timer[id].splice(0, 1); //Remove Oldest
+        }
+      }, updateTime)); //Record Delta History of the last second
+    }
+
+    function stopPopulation() {
+      for (var x = 0; x < loadTimers.length; x++) {
+        clearInterval(loadTimers[x]);
+        delete loadTimers[x];
+      }
+    }
+
+    function heatColor(percent) {
+      var num = Number(percent);
+      if (num < 50)
+        return 'green';
+      else if (num < 85)
+        return 'yellow';
+      else if (num < 99)
+        return 35;
+      else if (num < 150)
+        return 'red';
+      else
+        return 'magenta';
+    }
+  });
+
+  //For Testing Webstorm Bug
+  addCommand('charm', '', function () {
+    charm.reset();
+
+    var colors = ['red', 'cyan', 'yellow', 'green', 'blue'];
+    var text = 'Always after me lucky charms.';
+
+    var offset = 0;
+    var iv = setInterval(function () {
+      var y = 0, dy = 1;
+      for (var i = 0; i < 40; i++) {
+        var color = colors[(i + offset) % colors.length];
+        var c = text[(i + offset) % text.length];
+        charm
+          .move(1, dy)
+          .foreground(color)
+          .write(c)
+        ;
+        y += dy;
+        if (y <= 0 || y >= 5) dy *= -1;
+      }
+      charm.position(0, 1);
+      offset++;
+    }, 150);
   });
 }
 /**

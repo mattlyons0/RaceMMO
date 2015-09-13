@@ -6,13 +6,13 @@
  * Handles Update Loop
  * Handles Animation when running on Client
  */
+
 var fakeClient = false; //Will be set to true if we are faking being a client on the server for tests
 var onServer = function () {
   if (!fakeClient && 'undefined' != typeof (global)) //Check if we are on the server and are not pretending to be a client
     return true;
   return false;
 };
-var frameTime = 60 / 1000; //Run client game logic at 60hz
 
 /**
  * Main update loop runs on requestAnimationFrame, which will fallback to a setTimout loop on the server
@@ -30,7 +30,7 @@ var setupTiming = function (window) {
   if (!window.requestAnimationFrame) {
     window.requestAnimationFrame = function (callback, element) {
       var currentTime = Date.now();
-      var timeToCall = Math.max(0, frameTime - (currentTime - lastTime));
+      var timeToCall = Math.max(0, GameCore.frameTime - (currentTime - lastTime));
       var id = window.setTimeout(function () {
         callback(currentTime + timeToCall);
       }, timeToCall);
@@ -52,9 +52,15 @@ var setupTiming = function (window) {
  * @param clientFake boolean if this is a fake instance of a client (ex for testing)
  */
 var GameCore = function (gameInstance, clientFake) {
+  //CONSTANTS
+  GameCore.PHYSICS_UPDATE_TIME = 15; //Every 15ms run physics update
+  GameCore.DELTA_UPDATE_TIME = 4; //Every 4ms run delta update
+
+  GameCore.frameTime = 60 / 1000; //Run client game logic at 60hz
+
   if (clientFake === true) fakeClient = true;
 
-  if (onServer()) frameTime = 45; //Run at 22hz on server
+  if (onServer()) GameCore.frameTime = 45; //Run at 22hz on server
   setupTiming(typeof window == 'undefined' ? global : window); //Create timing mechanism that works both serverside and clientside
 
   this.instance = gameInstance;
@@ -90,8 +96,8 @@ var GameCore = function (gameInstance, clientFake) {
   this._pdte = new Date().getTime(); //Physics last delta time
   //Timer to sync client with server
   this.localTime = 0.016; //Local Timer
-  this._dt = new Date().getTime(); //Timer Delta
-  this._dte = new Date().getTime(); //Timer Delta from last frame time
+  this._dt = new Date().getTime(); //Timer Delta from last frame
+  this._dte = new Date().getTime(); //Timer Delta so far from current frame
 
   //Start physics loop, happens at different frequency than rendering
   this.createPhysicsSimulation();
@@ -393,7 +399,7 @@ GameCore.prototype.createNewPlayer = function (playerInstance) {
   } else {
     this.clientCreateNewPlayer(playerInstance.userID);
   }
-  console.log('Created player ' + playerInstance.userID);
+  //console.log('Created player ' + playerInstance.userID);
 };
 /**
  * Remove player from local version of server
@@ -405,7 +411,7 @@ GameCore.prototype.removePlayer = function (playerInstance) {
   } else {
     this.clientRemovePlayer(playerInstance.userID);
   }
-  console.log('Removed player ' + playerInstance.userID);
+  //console.log('Removed player ' + playerInstance.userID);
 };
 
 /*
@@ -802,7 +808,7 @@ GameCore.prototype.createTimer = function () {
     this._dt = new Date().getTime() - this._dte;
     this._dte = new Date().getTime();
     this.localTime += this._dt / 1000.0;
-  }.bind(this, 4)); //250x a second
+  }.bind(this, GameCore.DELTA_UPDATE_TIME));
 };
 /**
  * Create Timer to update physics simulation
@@ -812,7 +818,7 @@ GameCore.prototype.createPhysicsSimulation = function () {
     this._pdt = (new Date().getTime() - this._pdte) / 1000.0;
     this._pdte = new Date().getTime();
     this.updatePhysics();
-  }.bind(this), 15); //66x a second physics loop
+  }.bind(this), GameCore.PHYSICS_UPDATE_TIME);
 };
 /**
  * Make a ping between the client and server every second to ensure they are connected

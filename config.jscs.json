@@ -9,7 +9,7 @@
     "disallowSpaceAfterPrefixUnaryOperators": true,
     "disallowSpacesInFunction": null,
     "disallowSpacesInsideParentheses": true,
-    "disallowTrailingWhitespace": true,
+    "disallowTrailingWhitespace": false,
     "maximumLineLength": null,
     "requireCamelCaseOrUpperCaseIdentifiers": true,
     "requireCapitalizedComments": null,

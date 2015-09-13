@@ -1,3 +1,5 @@
+'use strict';
+
 var express = require('express');
 var toobusy = require('toobusy-js');
 var path = require('path');
@@ -28,7 +30,14 @@ function setupJade() {
 
 function setupMorgan() {
   if (app.get('env') === 'development') {
-    app.use(logger('dev')); //Logs Webserver Requests
+    app.use(logger('dev', {
+      skip: function (req, res) {
+        if (process.env.DEBUG === 'RaceMMO:Web' || process.env.DEBUG === 'RaceMMO:*') {
+          return false; //Debug everything if we have debug set for web
+        }
+        return res.statusCode < 400; //Otherwise only log http errors
+      }
+    })); //Logs Webserver Requests
   } else {
     app.use(logger('common', {
       skip: function (req, res) {
