@@ -205,8 +205,14 @@ function setupCommandLine(gameServer) {
       if (displayMode !== 'webstorm') {
         process.stdout.write('Game ID                              LogicDelta\tPhysicsDelta\tDelta\n');
       }
-      lastNumGames = gameServer.gameCount;
-      //noinspection JSDuplicatedDeclaration
+      if (count2 === 0) {
+        charm.display('bright');
+        process.stdout.write('No Active Lobbies\n');
+        charm.display('reset');
+        lastNumGames = 1;
+      } else {
+        lastNumGames = gameServer.gameCount;
+      }
       for (var gameID in deltas) {
         if (deltas.hasOwnProperty(gameID)) {
           //Calculate Averages
@@ -296,32 +302,6 @@ function setupCommandLine(gameServer) {
       else
         return 'magenta';
     }
-  });
-
-  //For Testing Webstorm Bug
-  addCommand('charm', '', function () {
-    charm.reset();
-
-    var colors = ['red', 'cyan', 'yellow', 'green', 'blue'];
-    var text = 'Always after me lucky charms.';
-
-    var offset = 0;
-    var iv = setInterval(function () {
-      var y = 0, dy = 1;
-      for (var i = 0; i < 40; i++) {
-        var color = colors[(i + offset) % colors.length];
-        var c = text[(i + offset) % text.length];
-        charm
-          .move(1, dy)
-          .foreground(color)
-          .write(c)
-        ;
-        y += dy;
-        if (y <= 0 || y >= 5) dy *= -1;
-      }
-      charm.position(0, 1);
-      offset++;
-    }, 150);
   });
 }
 /**

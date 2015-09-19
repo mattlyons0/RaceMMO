@@ -41,7 +41,8 @@ function setupMorgan() {
   } else {
     app.use(logger('common', {
       skip: function (req, res) {
-        return res.statusCode < 400;
+        if (!req.contains('favicon.ico')) //Don't log missing favicon
+          return res.statusCode < 400;
       }
     }));
   }
@@ -75,7 +76,7 @@ function setupErrorHandlers() {
   // will print stacktrace
   if (app.get('env') === 'development') {
     app.use(function (err, req, res, next) {
-      this.renderError(err, res, true);
+      renderError(err, res, true);
     });
   }
 
