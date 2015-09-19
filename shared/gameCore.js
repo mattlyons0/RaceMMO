@@ -592,8 +592,8 @@ GameCore.prototype.clientProcessNetPredictionCorrection = function () {
       this.players[this.socket.userID].lastInputSeq = lastInputSeqIndex;
       //Reapply all inputs that the server hasn't yet confirmed to 'keep' our position the same while confirming the server position
       this.clientUpdatePhysics();
-    } else if (this.players[this.socket.userID].inputs.length > 10) { //Warn when a reasonable amount of inputs have not been accepted
-      console.warn(this.players[this.socket.userID].inputs.length + ' Inputs have not been accepted by server'); //TODO change to warn when they haven't been accepted in a certain time
+    } else if (this.players[this.socket.userID].inputs.length > (this.netPing / GameCore.PHYSICS_UPDATE_TIME)) { //Warn when inputs haven't been accepted that should have.
+      console.warn(this.players[this.socket.userID].inputs.length + ' Inputs have not been accepted by server');
     }
   }
 };
@@ -825,7 +825,7 @@ GameCore.prototype.createPhysicsSimulation = function () {
  */
 GameCore.prototype.clientCreatePingTimer = function () {
   setInterval(function () {
-    this.lastPingTime = new Date().getTime() - this.fakeLag;
+    this.lastPingTime = new Date().getTime();
     this.socket.send('p.' + (this.lastPingTime)); //'p' for ping
   }.bind(this), 1000);
 };
@@ -846,7 +846,6 @@ GameCore.prototype.clientCreateConfiguration = function () {
   this.netLatency = 0.001; //Time from just server>client or client>server (ping/2)
   this.netPing = 0.001; //Round trip time from server and back
   this.lastPingTime = 0.001; //Last time we sent a ping
-  this.fakeLag = 0; //If we are simulating lag on the client
 
   this.netOffset = 100; //100ms latency between server and client interpolation for other clients
   this.bufferSize = 2; //The size of the server history to keep for interpolation
@@ -898,10 +897,6 @@ GameCore.prototype.clientCreateDebugGui = function () {
   _conSettings.add(this, 'netLatency').step(0.001).listen();
   _conSettings.add(this, 'netPing').step(0.001).listen();
 
-  var lagControl = _conSettings.add(this, 'fakeLag').min(0).step(2).listen();
-  lagControl.onChange(function (value) { //Notify Server Fake Lag has been enabled
-    this.socket.send('l.' + value); //'l' for lag
-  }.bind(this));
   _conSettings.open();
 
   var _netSettings = this.gui.addFolder('Networking');
@@ -1104,7 +1099,6 @@ GameCore.prototype.clientDrawInfo = function () {
     this.ctx.fillText('clientTime : delayed game time on client for other players only (includes the net_offset)', 10, 90);
     this.ctx.fillText('netLatency : Time from you to the server. ', 10, 130);
     this.ctx.fillText('netPing : Time from you to the server and back. ', 10, 150);
-    this.ctx.fillText('fakeLag : Add fake ping/lag for testing, applies only to your inputs (watch server_pos block!). ', 10, 170);
     this.ctx.fillText('clientSmoothing/clientSmooth : When updating players information from the server, it can smooth them out.', 10, 210);
     this.ctx.fillText(' This only applies to other clients when prediction is enabled, and applies to local player with no prediction.', 170, 230);
   }

@@ -114,7 +114,6 @@ function setupCommandLine(gameServer) {
   });
   addCommand('games', 'Display a list of ongoing games. If supplied a game number (from the list), will show extended details from that game.', function (args) {
     var displayMode = args[0];
-    console.log(args);
     var games = gameServer.games;
     var num = 1;
 
@@ -303,6 +302,22 @@ function setupCommandLine(gameServer) {
         return 'magenta';
     }
   });
+  addCommand('fakelag', 'Display emulated latency, or set using the desired latency as the parameter.', function (args) {
+    if (args[0]) { //First argument is latency in ms
+      var latency = Number(args[0]);
+      if (isNaN(latency)) {
+        charm.foreground('red');
+        console.log(args[0] + ' is not a number.');
+        charm.foreground('black');
+        return;
+      }
+      gameServer.fakeLag = latency;
+      console.log('Emulating Latency of ' + latency + ' ms.');
+    } else { //We need a game and a latency
+      console.log('Emulating '+ gameServer.fakeLag + 'ms of latency.');
+    }
+  });
+
 }
 /**
  * Handle stdin

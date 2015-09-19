@@ -33,7 +33,7 @@ setInterval(function () {
  * @param message message from client
  */
 gameServer.onMessage = function (client, message) {
-  if (this.fakeLag && message.split('.')[0].substr(0, 1) == 'i') { //If we are faking latency and it is a input message
+  if (this.fakeLag) { //If we are faking latencyf
     //Store input messages to emulate lag
     gameServer.messages.push({client: client, message: message});
 
@@ -73,10 +73,6 @@ gameServer._onMessage = function (client, message) {
           players[key].instance.send('s.pl.c.' + messageParts[1] + '.' + client.userID); //Send which client changed color as message part index 3
         }
       }
-      break;
-    case 'l': //Lag simulation request
-      this.fakeLag = parseFloat(messageParts[1]); //Given in MS
-      debug('faking lag by ' + this.fakeLag);
       break;
   }
 };
