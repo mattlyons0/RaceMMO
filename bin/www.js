@@ -266,7 +266,6 @@ function setupCommandLine(gameServer) {
 
     function setupPopulateLoop(id, timer, updateTime) {
       var core = gameServer.games[id].GameCore;
-      //Delta Timer
       if (!timer[id]) {
         timer[id] = [];
       }
@@ -274,7 +273,12 @@ function setupCommandLine(gameServer) {
         if (!timer[id]) {
           return;
         }
-        timer[id].push(core._dt);
+        if(updateTime === GameCore.DELTA_UPDATE_TIME)
+          timer[id].push(core._dt);
+        else if(updateTime === GameCore.PHYSICS_UPDATE_TIME)
+          timer[id].push(core.physicsUpdateTime);
+        else if(updateTime === GameCore.frameTime)
+          timer[id].push(core.updateTime)
         if (timer[id].length > (1000 / updateTime)) { //If we stored more than one second of history
           timer[id].splice(0, 1); //Remove Oldest
         }

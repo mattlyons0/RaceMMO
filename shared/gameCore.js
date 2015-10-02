@@ -297,6 +297,8 @@ GameCore.prototype.update = function (t) {
     this.serverUpdate();
   }
   this.updateID = window.requestAnimationFrame(this.update.bind(this), this.viewport); //Schedule next update
+
+  this.updateTime = Math.abs(new Date().getTime() - t); //Time in ms spent on logic update
 };
 /**
  * Check collision between the world bounds and the item
@@ -379,11 +381,13 @@ GameCore.prototype.physicsMovementVectorFromDirection = function (x, y) {
  * Update physics callable from both client and server
  */
 GameCore.prototype.updatePhysics = function () {
+  var time = new Date().getTime();
   if (this.server) {
     this.serverUpdatePhysics();
   } else {
     this.clientUpdatePhysics();
   }
+  this.physicsUpdateTime = Math.abs(time - new Date().getTime()); //Time in ms spent updating physics
 };
 /**
  * Add new player to local version of the server
@@ -805,7 +809,7 @@ GameCore.prototype.clientUpdate = function () {
  */
 GameCore.prototype.createTimer = function () {
   setInterval(function () {
-    this._dt = new Date().getTime() - this._dte;
+    this._dt = new Date().getTime() - this._dte; //Time spent last delta frame
     this._dte = new Date().getTime();
     this.localTime += this._dt / 1000.0;
   }.bind(this, GameCore.DELTA_UPDATE_TIME));

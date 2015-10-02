@@ -12,13 +12,8 @@
 
 
         <li>Remove States (and replace with attribs)</li>
-        <li>Fix netPing/netLatency when fake lag is changed by another client</li>
+        <li>Create composition based system for states <a href="https://medium.com/humans-create-software/composition-over-inheritance-cb6f88070205">(ex1)</a> <a href="http://vasir.net/blog/game-development/how-to-build-entity-component-system-in-javascript">(ex2)</a></li>
         <li>Handle Client events better (state changes should be broadcast to other clients from server instead of pushed in server updates)</li>
-        <ul>
-            <li>Migrate FakeLag from clientside to a serverside command</li>
-        </ul>
-        <li>Handle when javascript files fail to load on game page (or when javascript is disabled)</li>
-        <li>Determine if setting netOffset using ping is proper or not</li>
 
 
         <h3>Long Term</h3>
@@ -27,7 +22,6 @@
         <li>Migrate to Pixi.js</li>
         <li>Scale Canvas to browser size</li>
         <li>Adaptive 'clientSmooth' based on latency</li>
-        <li>Adaptive 'netOffset' (or update rate) based on server lag</li>
         <li>Test Express Server</li>
         <li>Assets: <a href="https://www.reddit.com/r/gamedev/comments/3cjgun/spritestiles_to_create_a_topdown_racing_game/">link</a></li>
         <li>Stop sending state updates every millisecond</li>
@@ -52,6 +46,9 @@
         <li>Create some way of merging lobbies</li>
         <li>Create socketIO stress test</li>
         <li>Merge javascript into one file</li>
+        <li>Determine if setting netOffset using ping is proper or not</li>
+        <li>Handle when javascript files fail to load on game page (or when javascript is disabled)</li>
+        <li>Handle ipv6 <a href="https://wiki.archlinux.org/index.php/IPv6_tunnel_broker_setup">Test</a></li>
 
 
         <h3>Possible Additions (if needed)</h3>

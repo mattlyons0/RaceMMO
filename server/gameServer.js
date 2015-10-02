@@ -17,6 +17,7 @@ gameServer.localTime = 0;
 gameServer._dt = new Date().getTime(); //DeltaTime
 gameServer._dte = new Date().getTime(); //Delta Time Elapsed
 gameServer.messages = []; //Queue messages for faking latency
+gameServer.playerCap = 300;
 
 /**
  * Handle Updating Timing
@@ -102,9 +103,9 @@ gameServer.createGame = function (player) {
     id: uuid(),
     players: [],
     playerCount: 0,
-    playerCapacity: 3
+    playerCapacity: this.playerCap
   };
-  //game.playerCount++; //TODO figure out why this is called twice upon creation when this isnt commented
+
   this.games[game.id] = game; //Store game
   gameServer.recentGame = game;
   this.gameCount++;
