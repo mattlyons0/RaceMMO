@@ -33,7 +33,7 @@ describe('Game Core Client', function () {
     done();
   });
 
-  //TODO fix failing test due to initial position not being told over network correctly
+  //TODO fix failing test due to lerp
   it('should update physics (and process input) properly', function (done) { //Tests createPhysicsSimulation
     setTimeout(function () { //Pass initial setup
       game._pdt.should.be.above(0);
@@ -47,31 +47,31 @@ describe('Game Core Client', function () {
 
         oldStatePos = game.players[game.socket.userID].oldState.pos;
         //Simulate Keypress to test physics vector
-        simulateKeypress(game, ['r']);
+        utils.simulateKeypress(game, ['r']);
         setTimeout(function () {
           game.players[game.socket.userID].currentState.pos.x.should.equal(oldStatePos.x + (game.playerSpeed * 0.015).fixed(3));
           game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y);
 
           oldStatePos = game.players[game.socket.userID].oldState.pos;
-          simulateKeypress(game, ['l', 'l']);
+          utils.simulateKeypress(game, ['l', 'l']);
           setTimeout(function () {
 
             game.players[game.socket.userID].currentState.pos.x.should.equal((oldStatePos.x - ((game.playerSpeed * 0.015) * 2)).fixed(3));
             game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y);
 
             oldStatePos = game.players[game.socket.userID].oldState.pos;
-            simulateKeypress(game, ['l', 'r']);
+            utils.simulateKeypress(game, ['l', 'r']);
             setTimeout(function () {
               game.players[game.socket.userID].currentState.pos.should.eql(oldStatePos);
 
               oldStatePos = game.players[game.socket.userID].oldState.pos;
-              simulateKeypress(game, ['u']);
+              utils.simulateKeypress(game, ['u']);
               setTimeout(function () {
                 game.players[game.socket.userID].currentState.pos.x.should.equal(oldStatePos.x);
                 game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y - (game.playerSpeed * 0.015).fixed(3));
 
                 oldStatePos = game.players[game.socket.userID].oldState.pos;
-                simulateKeypress(game, ['d']);
+                utils.simulateKeypress(game, ['d']);
                 setTimeout(function () {
                   game.players[game.socket.userID].currentState.pos.x.should.equal(oldStatePos.x);
                   game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y + (game.playerSpeed * 0.015).fixed(3));
@@ -83,7 +83,7 @@ describe('Game Core Client', function () {
           }, 35);
         }, 35);
       }, 35);
-    }, 40);
+    }, 100);
   });
 
   it('should update time correctly', function (done) {
@@ -250,7 +250,7 @@ describe('Game Core Client', function () {
     game.update(new Date().getTime());
     var game2 = new GameCore(undefined, true);
     var client2 = game2.socket;
-    simulateKeypress(game2, ['u', 'r', 'r', 'r']);
+    utils.simulateKeypress(game2, ['u', 'r', 'r', 'r']);
     setTimeout(function () {
       var target = game.serverUpdates[game.serverUpdates.length - 1];
       var previous = game.serverUpdates[game.serverUpdates.length - 2];
@@ -311,20 +311,20 @@ describe('Game Core Server', function () {
     game.socket.on('connect', function () {
       var core = app.gameServer.recentGame.GameCore;
       setTimeout(function () { //First Physics Tick
-        simulateKeypress(game, ['d']);
+        utils.simulateKeypress(game, ['d']);
         var oldState = core.players[game.socket.userID].pos;
         setTimeout(function () {
           core.players[game.socket.userID].pos.x.should.equal(oldState.x);
           core.players[game.socket.userID].pos.y.should.equal(oldState.y + (game.playerSpeed * 0.015).fixed(3));
 
           oldState = core.players[game.socket.userID].pos;
-          simulateKeypress(game, ['l']);
+          utils.simulateKeypress(game, ['l']);
           setTimeout(function () {
             core.players[game.socket.userID].pos.x.should.equal(oldState.x - (game.playerSpeed * 0.015).fixed(3));
             core.players[game.socket.userID].pos.y.should.equal(oldState.y);
 
             oldState = core.players[game.socket.userID].pos;
-            simulateKeypress(game, ['u', 'l', 'd', 'r']); //Shouldn't move after this sequence
+            utils.simulateKeypress(game, ['u', 'l', 'd', 'r']); //Shouldn't move after this sequence
             setTimeout(function () {
               core.players[game.socket.userID].pos.x.should.equal(oldState.x);
               core.players[game.socket.userID].pos.y.should.equal(oldState.y);
@@ -398,7 +398,3 @@ describe('Game Core Server', function () {
     }, 25);
   });
 });
-
-function simulateKeypress(game, key) {
-  game.clientHandleInput(key);
-}

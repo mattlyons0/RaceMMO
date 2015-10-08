@@ -74,4 +74,12 @@ this.logMessages = function (clients, event, callback, debugEnabled) {
     })(x);
   }
 };
+/**
+ * Simulate keypress on server
+ * @param game gameCore to simulate
+ * @param key array of characters pressed (can have one or more characters per element)
+ */
+this.simulateKeypress = function (game, key) {
+  game.clientHandleInput(key);
+};
 module.exports = this;
