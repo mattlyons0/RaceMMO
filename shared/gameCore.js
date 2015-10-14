@@ -5,7 +5,7 @@
  *
  * Handles Update Loop
  * Handles Animation when running on Client
- */
+*/
 
 var fakeClient = false; //Will be set to true if we are faking being a client on the server for tests
 var onServer = function () {
@@ -46,17 +46,25 @@ var setupTiming = function (window) {
 };
 
 /**
+ * @constructor
  * Main game class
  * Created on both client and server
  * @param gameInstance instance of game to run logic on
  * @param clientFake boolean if this is a fake instance of a client (ex for testing)
  */
 var GameCore = function (gameInstance, clientFake) {
-  //CONSTANTS
+  /** @constant */
   GameCore.PHYSICS_UPDATE_TIME = 15; //Every 15ms run physics update
+  /** @constant */
   GameCore.DELTA_UPDATE_TIME = 4; //Every 4ms run delta update
-
+  /** @constant */
   GameCore.frameTime = 60 / 1000; //Run client game logic at 60hz
+
+  if('undefined' == typeof (mathUtils)) { //If we are on the server, reference functions
+    GameCore.mathUtils = require('./utils/mathUtils');
+  } else { //If we are on the client, simply put functions inside GameCore
+    GameCore.mathUtils = mathUtils;
+  }
 
   if (clientFake === true) fakeClient = true;
 
@@ -66,9 +74,11 @@ var GameCore = function (gameInstance, clientFake) {
   this.instance = gameInstance;
   this.server = this.instance !== undefined; //Store if we are the server
   this.world = {width: 720, height: 480};
+
   //Create player set and tell them the game is running
   this.players = []; //Players is an array of the id's as keys, or 0 for self if we don't have an ID yet
-  if (this.server) {
+
+  if (this.server) { //Add clients reported from GameServer to the simulation
     for (var key in this.instance.players) {
       if (this.instance.players.hasOwnProperty(key)) {
         console.log('adding player ' + key);
@@ -76,21 +86,22 @@ var GameCore = function (gameInstance, clientFake) {
       }
     }
   } else { //On Client
-    this.socket = {userID: 0};//Initial ID before server assigns us one
-    this.createNewPlayer({userID: this.socket.userID});
-    //Display ghosts
-    this.ghosts = {
-      serverPosSelf: new GamePlayer(this), //Our ghost position on the server
-      serverPosOther: [], //The other player's server position
-      posOther: [] //The other players lerp position
-    };
-    //Setup Ghosts
-    this.ghosts.serverPosSelf.infoColor = 'rgba(255,255,255,0.2)';
-    this.ghosts.serverPosSelf.state = 'serverPos';
-    this.ghosts.serverPosSelf.pos = {x: 20, y: 20};
+      this.socket = {userID: 0};//Initial ID before server assigns us one
+      this.createNewPlayer({userID: this.socket.userID});
+
+      //Display ghosts
+      this.ghosts = {
+        serverPosSelf: new GamePlayer(this), //Our ghost position on the server
+        serverPosOther: [], //The other player's server position
+        posOther: [] //The other players lerp position
+      };
+      //Setup Ghosts
+      this.ghosts.serverPosSelf.infoColor = 'rgba(255,255,255,0.2)';
+      this.ghosts.serverPosSelf.state = 'serverPos';
+      this.ghosts.serverPosSelf.pos = {x: 20, y: 20};
   }
 
-  this.playerSpeed = 109; //Movespeed (used 66 times per second)
+  this.playerSpeed = 109; //Movespeed in pixels (used 66 times per second)
   //Setup Physics Vars
   this._pdt = 0.0001; //Physics delta time
   this._pdte = new Date().getTime(); //Physics last delta time
@@ -107,12 +118,13 @@ var GameCore = function (gameInstance, clientFake) {
   if (!this.server) {
     if (!fakeClient)
       this.keyboard = new THREEx.KeyboardState(); //Keyboard Handler
+
     this.clientCreateConfiguration(); //Create Default Settings for client
     this.serverUpdates = []; //List of recent server updates so we can interpolate
     this.clientConnectToServer(); //Connect to the socket.io server
     this.clientCreatePingTimer(); //Start pinging server and determine latency
     if (!fakeClient) {
-      this.color = localStorage.getItem('color') || this.randomColor(); //Get color from localStorage or use random color
+      this.color = localStorage.getItem('color') || GameCore.mathUtils.randomColor(); //Get color from localStorage or use random color
       localStorage.setItem('color', this.color);
     }
     this.players[this.socket.userID].color = this.color; //Set Players color
@@ -129,101 +141,8 @@ var GameCore = function (gameInstance, clientFake) {
 
 //Serverside we set GameCore as the global type
 if ('undefined' != typeof global) {
-  module.exports = global.GameCore = GameCore;
+  module.exports = global.GameCore = GameCore; //TODO figure out if i'm even using this
 }
-
-/*
- Helper functions for game code
- 2D vector code helpers and rounding helpers
- */
-
-/**
- * Rounds number to n places
- * @param n places to round
- * @returns {Number} rounded number to n places
- */
-Number.prototype.fixed = function (n) {
-  n = n || 3;
-  return parseFloat(this.toFixed(n));
-};
-/**
- * Copies 2d vector to another 2d vector
- * @param a vector to copy
- * @returns {{x: (number|*|Number), y: (number|*|Number)}} copied vector
- */
-GameCore.prototype.pos = function (a) {
-  return {x: a.x, y: a.y};
-};
-/**
- * Add 2d vectors
- * @param a vector 1 to add
- * @param b vector 2 to add
- * @returns {{x: (Number|string), y: (Number|string)}} the resulting vector after vector addition
- */
-GameCore.prototype.vAdd = function (a, b) {
-  return {x: (a.x + b.x).fixed(), y: (a.y + b.y).fixed()};
-};
-/**
- * Subtract 2d vectors
- * @param a vector 1 to subtract
- * @param b vector 2 to subtract
- * @returns {{x: Number, y: Number}} the resulting vector after subracting a from b
- */
-GameCore.prototype.vSub = function (a, b) {
-  return {x: (a.x - b.x).fixed(), y: (a.y - b.y).fixed()};
-};
-/**
- * Multiply a vector by a scalar
- * @param a vector
- * @param b scalar
- * @returns {{x: Number, y: Number}} the result of the scalar multiplication
- */
-GameCore.prototype.vMultScalar = function (a, b) {
-  return {x: (a.x * b).fixed(), y: (a.y * b).fixed()};
-};
-/**
- * For the server, cancel the setTimeout
- */
-GameCore.prototype.stopUpdate = function () {
-  window.cancelAnimationFrame(this.updateID);
-};
-/**
- * Simple linear interpolation
- * @param p
- * @param n
- * @param t
- * @returns {Number|string}
- */
-GameCore.prototype.lerp = function (p, n, t) {
-  var _t = Number(t);
-  _t = (Math.max(0, Math.min(1, _t))).fixed();
-  return (p + _t * (n - p)).fixed();
-};
-/**
- * Simple linear interpolation between 2 vectors
- * @param v
- * @param tv
- * @param t
- * @returns {{x: (Number|string), y: (Number|string)}}
- */
-GameCore.prototype.vLerp = function (v, tv, t) {
-  return {x: this.lerp(v.x, tv.x, t), y: this.lerp(v.y, tv.y, t)};
-};
-/**
- * Returns a random integer between min (inclusive) and max (inclusive)
- * Using Math.round() will give you a non-uniform distribution!
- */
-GameCore.prototype.randomInt = function (min, max) {
-  return Math.floor(Math.random() * (max - min + 1)) + min;
-};
-
-/**
- * Generates a random color in hex
- * @returns {string} random color
- */
-GameCore.prototype.randomColor = function () {
-  return '#' + Math.floor(Math.random() * 16777215).toString(16);
-};
 
 /**
  * Player Class, manage player state and draw if needed
@@ -422,6 +341,7 @@ GameCore.prototype.removePlayer = function (playerInstance) {
  SERVER FUNCTIONS
  Functions specifically for serverSide only
  */
+
 /**
  * Create player instance for server logic
  * @param player instance of player
@@ -431,8 +351,8 @@ GameCore.prototype.serverCreateNewPlayer = function (player) {
   var playerObj = this.players[player.userID];
   playerObj.pos =
   { //Generate random starting positions for each player
-    x: this.randomInt(playerObj.posLimits.xMin, playerObj.posLimits.xMax),
-    y: this.randomInt(playerObj.posLimits.yMin, playerObj.posLimits.yMax)
+    x: GameCore.mathUtils.randomInt(playerObj.posLimits.xMin, playerObj.posLimits.xMax),
+    y: GameCore.mathUtils.randomInt(playerObj.posLimits.yMin, playerObj.posLimits.yMax)
   };
 };
 /**
@@ -449,9 +369,9 @@ GameCore.prototype.serverUpdatePhysics = function () {
   for (var key in this.players) {
     if (this.players.hasOwnProperty(key)) {
       var player = this.players[key];
-      player.oldState.pos = this.pos(player.pos); //Move current state to oldState
+      player.oldState.pos = GameCore.mathUtils.pos(player.pos); //Move current state to oldState
       var newDir = this.processInput(player);
-      player.pos = this.vAdd(player.oldState.pos, newDir);
+      player.pos = GameCore.mathUtils.vAdd(player.oldState.pos, newDir);
       player.inputs = []; //Remove input queue because they were processed
     }
   }
@@ -469,9 +389,10 @@ GameCore.prototype.serverUpdatePhysics = function () {
  */
 GameCore.prototype.serverUpdate = function () {
   this.serverTime = this.localTime; //Update our clock to match timer
-  //if(this.lastState.his===this.players.self.lastInputSeq&&this.lastState.cis===this.players.other.lastInputSeq) {
+  //if (this.lastState.his === this.players.self.lastInputSeq && this.lastState.cis === this.players.other.lastInputSeq) {
   //  return; //Disables sending same state multiple times, but also causes state match bugs, so I'll comment it until its needed
   //}
+  //TODO send unique hash with each serverupdate so we don't have to iterate through every player to check if a update has changed or not
   var playersData = [];
   var num = 0;
   for (var key in this.players) {
@@ -506,6 +427,12 @@ GameCore.prototype.handleServerInput = function (client, input, inputTime, input
   playerClient.inputs.push({inputs: input, time: inputTime, seq: inputSeq}); //Push into array of stored inputs
 };
 
+/**
+ * For the server, cancel the setTimeout
+ */
+GameCore.prototype.stopUpdate = function () {
+  window.cancelAnimationFrame(this.updateID);
+};
 /*
  CLIENTSIDE FUNCTIONS
  Functions for clientside only
@@ -576,7 +503,7 @@ GameCore.prototype.clientProcessNetPredictionCorrection = function () {
   var latestServerData = this.serverUpdates[this.serverUpdates.length - 1];
   var myData = latestServerData.pl[this.socket.userID];
   var myServerPos = myData.pos; //Get the client position
-  this.ghosts.serverPosSelf.pos = this.pos(myServerPos); //Update Ghost with real position
+  this.ghosts.serverPosSelf.pos = GameCore.mathUtils.pos(myServerPos); //Update Ghost with real position
 
   //Local Input Prediction
   var myLastInputOnServer = myData.is;
@@ -592,7 +519,7 @@ GameCore.prototype.clientProcessNetPredictionCorrection = function () {
     if (lastInputSeqIndex != -1) { //Server acknowledges that our inputs were accepted
       var numberToClear = Math.abs(lastInputSeqIndex - (-1)); //Clear inputs we confirmed are on server
       this.players[this.socket.userID].inputs.splice(0, numberToClear);
-      this.players[this.socket.userID].currentState.pos = this.pos(myServerPos); //We know we are at this position because the server confirmed it
+      this.players[this.socket.userID].currentState.pos = GameCore.mathUtils.pos(myServerPos); //We know we are at this position because the server confirmed it
       this.players[this.socket.userID].lastInputSeq = lastInputSeqIndex;
       //Reapply all inputs that the server hasn't yet confirmed to 'keep' our position the same while confirming the server position
       this.clientUpdatePhysics();
@@ -659,18 +586,18 @@ GameCore.prototype.clientProcessNetUpdates = function () {
         var otherPastPos = previous.pl[id] ? previous.pl[id].pos : undefined;
 
         //Update Destination Ghost
-        this.ghosts.serverPosOther[id].pos = this.pos(otherServerPos);
+        this.ghosts.serverPosOther[id].pos = GameCore.mathUtils.pos(otherServerPos);
 
         //ghosts.posOther is the destination position, if there is no past position theres no destination
         if (otherPastPos && otherTargetPos) { //If we can update the ghost using lerp great, if not fall back to simply plugging in from server update
-          this.ghosts.posOther[id].pos = this.vLerp(otherPastPos, otherTargetPos, timePoint); //Linear interpolation between past and target position at a given time
+          this.ghosts.posOther[id].pos = GameCore.mathUtils.vLerp(otherPastPos, otherTargetPos, timePoint); //Linear interpolation between past and target position at a given time
         } else { //Player didn't exist in last server update, so simply plug in his position
-          this.ghosts.posOther[id].pos = this.pos(otherServerPos);
+          this.ghosts.posOther[id].pos = GameCore.mathUtils.pos(otherServerPos);
         }
         if (this.clientSmoothing && otherPastPos && otherTargetPos) { //Meets the conditions to do lerp, if not we assume we will have more data next server update or smoothing is off
-          this.players[id].pos = this.vLerp(this.players[id].pos, this.ghosts.posOther[id].pos, this._pdt * this.clientSmooth); //lerp serverPos with directionVector with timeDelta*smoothAmt
+          this.players[id].pos = GameCore.mathUtils.vLerp(this.players[id].pos, this.ghosts.posOther[id].pos, this._pdt * this.clientSmooth); //lerp serverPos with directionVector with timeDelta*smoothAmt
         } else { //No Smoothing
-          this.players[id].pos = this.pos(this.ghosts.posOther[id].pos); //Player Position is the position on the server
+          this.players[id].pos = GameCore.mathUtils.pos(this.ghosts.posOther[id].pos); //Player Position is the position on the server
         }
       }
     }
@@ -689,13 +616,13 @@ GameCore.prototype.clientProcessNetUpdates = function () {
         myPastPos = myServerPos;
       }
 
-      this.ghosts.serverPosSelf.pos = this.pos(myServerPos); //Snap ghost to new server pos
-      var localTarget = this.vLerp(myPastPos, myTargetPos, timePoint);
+      this.ghosts.serverPosSelf.pos = GameCore.mathUtils.pos(myServerPos); //Snap ghost to new server pos
+      var localTarget = GameCore.mathUtils.vLerp(myPastPos, myTargetPos, timePoint);
 
       if (this.clientSmoothing) {
-        this.players[this.socket.userID].pos = this.vLerp(this.players[this.socket.userID].pos, localTarget, this._pdt * this.clientSmooth);
+        this.players[this.socket.userID].pos = GameCore.mathUtils.vLerp(this.players[this.socket.userID].pos, localTarget, this._pdt * this.clientSmooth);
       } else {
-        this.players[this.socket.userID].pos = this.pos(localTarget);
+        this.players[this.socket.userID].pos = GameCore.mathUtils.pos(localTarget);
       }
     }
   }
@@ -716,12 +643,12 @@ GameCore.prototype.clientOnServerUpdateReceived = function (data) {
     }
   }
   if (this.serverUpdates.length === 0) { //Upon first tick, update position from server
-    this.players[this.socket.userID].currentState.pos = this.pos(pl[this.socket.userID].pos);
+    this.players[this.socket.userID].currentState.pos = GameCore.mathUtils.pos(pl[this.socket.userID].pos);
   }
   if (this.naiveApproach) {
     for (var key in this.players) {
       if (this.players.hasOwnProperty(key)) {
-        this.players[key].pos = this.pos(pl[key].pos);
+        this.players[key].pos = GameCore.mathUtils.pos(pl[key].pos);
       }
     }
   } else { //Lerp Approach
@@ -759,9 +686,9 @@ GameCore.prototype.clientUpdatePhysics = function () {
   if (this.clientPredict) {
     //Fetch the direction from input buffer and use it to smooth visuals
     var self = this.players[this.socket.userID];
-    self.oldState.pos = this.pos(self.currentState.pos);
+    self.oldState.pos = GameCore.mathUtils.pos(self.currentState.pos);
     var nd = this.processInput(self); //new direction vector
-    self.currentState.pos = this.vAdd(self.oldState.pos, nd);
+    self.currentState.pos = GameCore.mathUtils.vAdd(self.oldState.pos, nd);
     self.stateTime = this.localTime;
   }
 };
