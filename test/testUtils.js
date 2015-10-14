@@ -1,4 +1,7 @@
 /*jshint loopfunc: true */
+require('../shared/gamePlayer');
+require('../shared/gameCore');
+require('../client/clientCore');
 var debug = require('debug')('RaceMMO:test:testUtils');
 var io = require('socket.io-client');
 var options = {

@@ -83,7 +83,7 @@ describe('Game Core Client', function () {
           }, 35);
         }, 35);
       }, 35);
-    }, 100);
+    }, 150);
   });
 
   it('should update time correctly', function (done) {
