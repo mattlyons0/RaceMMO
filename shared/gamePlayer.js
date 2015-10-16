@@ -37,6 +37,7 @@ var GamePlayer = function (gameInstance, playerInstance) {
 
 /**
  * Draw on client using game.ctx
+ * //TODO figure out where this should go, as it is clientside drawing
  */
 GamePlayer.prototype.draw = function () {
   if (fakeClient) return;
