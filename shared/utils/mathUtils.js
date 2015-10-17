@@ -1,7 +1,7 @@
-var mathUtils={};
+var mathUtils = {};
 
 /*
-  2D vector code helpers and rounding helpers
+ 2D vector code helpers and rounding helpers
  */
 
 /**
@@ -87,5 +87,5 @@ mathUtils.randomColor = function () {
 };
 
 
-if('undefined' != typeof (global)) //If we are serverside export functions
-  module.exports=mathUtils;
+if ('undefined' != typeof (global)) //If we are serverside export functions
+  module.exports = mathUtils;

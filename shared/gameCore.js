@@ -5,7 +5,7 @@
  *
  * Contains Core Game Logic
  *    Since simulation is run on both client and server, it makes sense to share some functions
-*/
+ */
 
 var fakeClient = false; //Will be set to true if we are faking being a client on the server for tests
 var onServer = function () {
@@ -60,7 +60,7 @@ var GameCore = function (gameInstance, clientFake) {
   /** @constant */
   GameCore.frameTime = 60 / 1000; //Run client game logic at 60hz
 
-  if('undefined' == typeof (mathUtils)) { //If we are on the server, reference functions
+  if ('undefined' == typeof (mathUtils)) { //If we are on the server, reference functions
     GameCore.mathUtils = require('./utils/mathUtils');
     require('../server/serverCore'); //Supplies gamePlayer as well
   } else { //If we are on the client, simply put functions inside GameCore
@@ -68,7 +68,7 @@ var GameCore = function (gameInstance, clientFake) {
   }
 
   if (clientFake === true) this.fakeClient = true;
-  else this.fakeClient=false;
+  else this.fakeClient = false;
 
   if (onServer()) GameCore.frameTime = 45; //Run at 22hz on server
   setupTiming(typeof window == 'undefined' ? global : window); //Create timing mechanism that works both serverside and clientside
@@ -88,19 +88,19 @@ var GameCore = function (gameInstance, clientFake) {
       }
     }
   } else { //On Client
-      this.socket = {userID: 0};//Initial ID before server assigns us one
-      this.createNewPlayer({userID: this.socket.userID});
+    this.socket = {userID: 0};//Initial ID before server assigns us one
+    this.createNewPlayer({userID: this.socket.userID});
 
-      //Display ghosts
-      this.ghosts = {
-        serverPosSelf: new GamePlayer(this), //Our ghost position on the server
-        serverPosOther: [], //The other player's server position
-        posOther: [] //The other players lerp position
-      };
-      //Setup Ghosts
-      this.ghosts.serverPosSelf.infoColor = 'rgba(255,255,255,0.2)';
-      this.ghosts.serverPosSelf.state = 'serverPos';
-      this.ghosts.serverPosSelf.pos = {x: 20, y: 20};
+    //Display ghosts
+    this.ghosts = {
+      serverPosSelf: new GamePlayer(this), //Our ghost position on the server
+      serverPosOther: [], //The other player's server position
+      posOther: [] //The other players lerp position
+    };
+    //Setup Ghosts
+    this.ghosts.serverPosSelf.infoColor = 'rgba(255,255,255,0.2)';
+    this.ghosts.serverPosSelf.state = 'serverPos';
+    this.ghosts.serverPosSelf.pos = {x: 20, y: 20};
   }
 
   this.playerSpeed = 109; //Movespeed in pixels (used 66 times per second)
@@ -142,7 +142,7 @@ var GameCore = function (gameInstance, clientFake) {
 }; //GameCore constructor
 
 //Serverside we set GameCore as the global type
-if ('undefined' != typeof global) {
+if ('undefined' !== typeof global) {
   module.exports = global.GameCore = GameCore; //TODO figure out if i'm even using this
 }
 

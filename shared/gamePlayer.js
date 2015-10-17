@@ -33,6 +33,14 @@ var GamePlayer = function (gameInstance, playerInstance) {
     yMax: this.game.world.height - this.size.hy
   };
   this.pos = {x: 0, y: 0}; //Need to update this later
+
+  //Example of composition system
+  /*
+  if ('undefined' !== typeof (global)) //if we are serverside
+    this.colorChanger = require('./systems/colorChanger')(this);
+  else
+    this.colorChanger = colorChanger(this);
+  */
 };
 
 /**
@@ -41,6 +49,10 @@ var GamePlayer = function (gameInstance, playerInstance) {
  */
 GamePlayer.prototype.draw = function () {
   if (fakeClient) return;
+
+  //Example of a composition system
+  //this.colorChanger.change();
+
   //Draw Player Rectangle
   game.ctx.fillStyle = 'rgba(255,255,255,0.1)'; //Draw grey if online is false
   if (this.online === true)
@@ -54,5 +66,5 @@ GamePlayer.prototype.draw = function () {
   game.ctx.fillText(this.state, this.pos.x + 10, this.pos.y + 4);
 };
 
-if('undefined' != typeof (global)) //If we are serverside export functions
-  module.exports=GamePlayer;
+if ('undefined' != typeof (global)) //If we are serverside export functions
+  module.exports = GamePlayer;
