@@ -215,7 +215,7 @@ describe('Game Core Client', function () {
 
       item.pos.x = maxX - 0.0001;
       var cloneI = clone(item);
-      game.checkCollision(cloneI);
+      game.checkCollision(cloneI.state);
       debug(item.pos.x + ' ' + cloneI.pos.x);
       item.pos.x.should.equal(cloneI.pos.x);
       item.pos.y.should.equal(cloneI.pos.y);
@@ -223,21 +223,21 @@ describe('Game Core Client', function () {
       item.pos.x = maxX;
       item.pos.y = maxY;
       cloneI = clone(item);
-      game.checkCollision(cloneI);
+      game.checkCollision(cloneI.state);
       cloneI.pos.x.should.equal(item.pos.x);
       cloneI.pos.y.should.equal(item.pos.y);
 
       item.pos.x = minX;
       item.pos.y = minY;
       cloneI = clone(item);
-      game.checkCollision(cloneI);
+      game.checkCollision(cloneI.state);
       cloneI.pos.x.should.equal(item.pos.x);
       cloneI.pos.y.should.equal(item.pos.y);
 
       item.pos.x = minX - 10;
       item.pos.y = maxY + 10;
       cloneI = clone(item);
-      game.checkCollision(cloneI);
+      game.checkCollision(cloneI.state);
       cloneI.pos.x.should.equal(minX);
       cloneI.pos.y.should.equal(maxY);
 

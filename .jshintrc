@@ -1,0 +1,8 @@
+{
+    "node": true,
+    "esnext": true,
+    "shadow": true,
+    "undef": false,
+    "unused": false,
+    "-W117": false //Disable undefined vars
+}

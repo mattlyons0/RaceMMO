@@ -9,7 +9,7 @@
 
 var fakeClient = false; //Will be set to true if we are faking being a client on the server for tests
 var onServer = function () {
-  if (!fakeClient && 'undefined' != typeof (global)) //Check if we are on the server and are not pretending to be a client
+  if (!fakeClient && 'undefined' !== typeof (global)) //Check if we are on the server and are not pretending to be a client
     return true;
   return false;
 };
@@ -60,7 +60,7 @@ var GameCore = function (gameInstance, clientFake) {
   /** @constant */
   GameCore.frameTime = 60 / 1000; //Run client game logic at 60hz
 
-  if ('undefined' == typeof (mathUtils)) { //If we are on the server, reference functions
+  if ('undefined' === typeof (mathUtils)) { //If we are on the server, reference functions
     GameCore.mathUtils = require('./utils/mathUtils');
     require('../server/serverCore'); //Supplies gamePlayer as well
   } else { //If we are on the client, simply put functions inside GameCore
@@ -71,7 +71,7 @@ var GameCore = function (gameInstance, clientFake) {
   else this.fakeClient = false;
 
   if (onServer()) GameCore.frameTime = 45; //Run at 22hz on server
-  setupTiming(typeof window == 'undefined' ? global : window); //Create timing mechanism that works both serverside and clientside
+  setupTiming(typeof window === 'undefined' ? global : window); //Create timing mechanism that works both serverside and clientside
 
   this.instance = gameInstance;
   this.server = this.instance !== undefined; //Store if we are the server
@@ -98,9 +98,9 @@ var GameCore = function (gameInstance, clientFake) {
       posOther: [] //The other players lerp position
     };
     //Setup Ghosts
-    this.ghosts.serverPosSelf.infoColor = 'rgba(255,255,255,0.2)';
-    this.ghosts.serverPosSelf.state = 'serverPos';
-    this.ghosts.serverPosSelf.pos = {x: 20, y: 20};
+    this.ghosts.serverPosSelf.state.infoColor = 'rgba(255,255,255,0.2)';
+    this.ghosts.serverPosSelf.state.label = 'serverPos';
+    this.ghosts.serverPosSelf.state.pos = {x: 20, y: 20};
   }
 
   this.playerSpeed = 109; //Movespeed in pixels (used 66 times per second)
@@ -129,7 +129,7 @@ var GameCore = function (gameInstance, clientFake) {
       this.color = localStorage.getItem('color') || GameCore.mathUtils.randomColor(); //Get color from localStorage or use random color
       localStorage.setItem('color', this.color);
     }
-    this.players[this.socket.userID].color = this.color; //Set Players color
+    this.players[this.socket.userID].state.color = this.color; //Set Players color
 
     //Make debug gui if requested
     if (String(window.location).indexOf('debug') != -1) {
@@ -164,40 +164,40 @@ GameCore.prototype.update = function (t) {
 };
 /**
  * Check collision between the world bounds and the item
- * @param item item to check against the world bounds
+ * @param itemState state of item to check against the world bounds
  */
-GameCore.prototype.checkCollision = function (item) {
-  if (item.pos.x <= item.posLimits.xMin) { //Left Wall
-    item.pos.x = item.posLimits.xMin;
+GameCore.prototype.checkCollision = function (itemState) {
+  if (itemState.pos.x <= itemState.posLimits.xMin) { //Left Wall
+    itemState.pos.x = itemState.posLimits.xMin;
   }
-  if (item.pos.x >= item.posLimits.xMax) { //Right Wall
-    item.pos.x = item.posLimits.xMax;
+  if (itemState.pos.x >= itemState.posLimits.xMax) { //Right Wall
+    itemState.pos.x = itemState.posLimits.xMax;
   }
-  if (item.pos.y <= item.posLimits.yMin) { //Top Wall
-    item.pos.y = item.posLimits.yMin;
+  if (itemState.pos.y <= itemState.posLimits.yMin) { //Top Wall
+    itemState.pos.y = itemState.posLimits.yMin;
   }
-  if (item.pos.y >= item.posLimits.yMax) { //Bottom Wall
-    item.pos.y = item.posLimits.yMax;
+  if (itemState.pos.y >= itemState.posLimits.yMax) { //Bottom Wall
+    itemState.pos.y = itemState.posLimits.yMax;
   }
 
   //Fixed point helps determinism
-  item.pos.x = item.pos.x.fixed(4);
-  item.pos.y = item.pos.y.fixed(4);
+  itemState.pos.x = itemState.pos.x.fixed(4);
+  itemState.pos.y = itemState.pos.y.fixed(4);
 };
 /**
  * Process inputs received since last update
- * @param player player to process inputs for
+ * @param playerState player state to process inputs for
  * @returns {*} resulting vector from inputs
  */
-GameCore.prototype.processInput = function (player) {
+GameCore.prototype.processInput = function (playerState) {
   var xDir = 0;
   var yDir = 0;
-  var ic = player.inputs.length; //Input Count
+  var ic = playerState.inputs.length; //Input Count
   if (ic) {
     for (var x = 0; x < ic; ++x) {
-      if (player.inputs[x].seq <= player.lastInputSeq) continue; //Skip if we have simulated it locally
+      if (playerState.inputs[x].seq <= playerState.lastInputSeq) continue; //Skip if we have simulated it locally
 
-      var input = player.inputs[x].inputs;
+      var input = playerState.inputs[x].inputs;
       var c = input.length;
       for (var i = 0; i < c; ++i) {
         var key = input[i];
@@ -219,10 +219,10 @@ GameCore.prototype.processInput = function (player) {
     }
   }
   var resultingVector = this.physicsMovementVectorFromDirection(xDir, yDir);
-  if (player.inputs.length) {
+  if (playerState.inputs.length) {
     //Clear array of proccessed inputs
-    player.lastInputTime = player.inputs[ic - 1].time;
-    player.lastInputSeq = player.inputs[ic - 1].seq;
+    playerState.lastInputTime = playerState.inputs[ic - 1].time;
+    playerState.lastInputSeq = playerState.inputs[ic - 1].seq;
   }
   return resultingVector;
 };

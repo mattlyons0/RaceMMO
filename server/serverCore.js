@@ -12,10 +12,10 @@ var GamePlayer = require('../shared/gamePlayer');
 GameCore.prototype.serverCreateNewPlayer = function (player) {
   this.players[player.userID] = new GamePlayer(this, player);
   var playerObj = this.players[player.userID];
-  playerObj.pos =
+  playerObj.state.pos =
   { //Generate random starting positions for each player
-    x: GameCore.mathUtils.randomInt(playerObj.posLimits.xMin, playerObj.posLimits.xMax),
-    y: GameCore.mathUtils.randomInt(playerObj.posLimits.yMin, playerObj.posLimits.yMax)
+    x: GameCore.mathUtils.randomInt(playerObj.state.posLimits.xMin, playerObj.state.posLimits.xMax),
+    y: GameCore.mathUtils.randomInt(playerObj.state.posLimits.yMin, playerObj.state.posLimits.yMax)
   };
 };
 /**
@@ -32,10 +32,10 @@ GameCore.prototype.serverUpdatePhysics = function () {
   for (var key in this.players) {
     if (this.players.hasOwnProperty(key)) {
       var player = this.players[key];
-      player.oldState.pos = GameCore.mathUtils.pos(player.pos); //Move current state to oldState
-      var newDir = this.processInput(player);
-      player.pos = GameCore.mathUtils.vAdd(player.oldState.pos, newDir);
-      player.inputs = []; //Remove input queue because they were processed
+      player.state.oldState.pos = GameCore.mathUtils.pos(player.state.pos); //Move current state to oldState
+      var newDir = this.processInput(player.state);
+      player.state.pos = GameCore.mathUtils.vAdd(player.state.oldState.pos, newDir);
+      player.state.inputs = []; //Remove input queue because they were processed
     }
   }
   //Seperate loops because we want collision check to happen after movement
@@ -43,7 +43,7 @@ GameCore.prototype.serverUpdatePhysics = function () {
   for (var key1 in this.players) {
     if (this.players.hasOwnProperty(key1)) {
       var player1 = this.players[key1];
-      this.checkCollision(player1);
+      this.checkCollision(player1.state);
     }
   }
 };
@@ -61,7 +61,7 @@ GameCore.prototype.serverUpdate = function () {
   for (var key in this.players) {
     if (this.players.hasOwnProperty(key)) {
       var player = this.players[key];
-      playersData[num] = {id: key, pos: player.pos, is: player.lastInputSeq};
+      playersData[num] = {id: key, pos: player.state.pos, is: player.state.lastInputSeq};
       num++;
     }
   }
@@ -87,7 +87,7 @@ GameCore.prototype.serverUpdate = function () {
  */
 GameCore.prototype.handleServerInput = function (client, input, inputTime, inputSeq) {
   var playerClient = this.players[client.userID];//Figure out which player gave the input
-  playerClient.inputs.push({inputs: input, time: inputTime, seq: inputSeq}); //Push into array of stored inputs
+  playerClient.state.inputs.push({inputs: input, time: inputTime, seq: inputSeq}); //Push into array of stored inputs
 };
 
 /**
