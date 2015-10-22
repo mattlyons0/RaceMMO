@@ -2,7 +2,9 @@
  CLIENTSIDE FUNCTIONS
  Functions for clientside only
  */
-
+GameCore = require('../shared/gameCore');
+if (typeof window !== 'undefined') //We are in the browser
+  var dat = require('../client/lib/dat.gui');
 if ('undefined' === typeof (GamePlayer)) //If this hasn't been loaded serverside (unit testing)
   GamePlayer = require('../shared/gamePlayer');
 
@@ -266,7 +268,7 @@ GameCore.prototype.clientUpdatePhysics = function () {
  *  Draw, Input, Physics
  */
 GameCore.prototype.clientUpdate = function () {
-  if (!fakeClient) {
+  if (!this.fakeClient) {
     this.ctx.clearRect(0, 0, 720, 480);
     this.clientDrawInfo();
     this.clientDrawServer();
@@ -543,7 +545,7 @@ GameCore.prototype.clientConnectToServer = function () {
   if (this.fakeClient)
     this.socket = require('../test/testUtils').connect();
   else
-    this.socket = io.connect();
+    this.socket = require('socket.io-client').connect();
 
   this.socket.userID = 0;
   this.socket.on('connect', function () {
@@ -593,3 +595,5 @@ GameCore.prototype.clientDrawServer = function () {
   this.ctx.fillText('Server: ' + this.instance.id, 0, this.world.height - 25);
   this.ctx.fillStyle = 'rgba(255,255,255,1)'; //Reset Fillstyle
 };
+
+module.exports=GameCore;

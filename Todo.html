@@ -1,7 +1,10 @@
 <ul>
     <h2>Bugs</h2>
     <ul>
-        <li>No known bugs</li>
+        <li>Upon server disconnection and reconnection position isn't updated until you move</li>
+        <ul>
+            <li>Should probably tell server where you are instead of updating to its location</li>
+        </ul>
     </ul>
 
     <h2>Features</h2>
@@ -21,7 +24,7 @@
         <li>Create State Management system to update states to everyone when a value is changed</li>
         <li>Create composition based system for states <a href="https://medium.com/humans-create-software/composition-over-inheritance-cb6f88070205">(ex1)</a> <a href="http://vasir.net/blog/game-development/how-to-build-entity-component-system-in-javascript">(ex2)</a></li>
         <li>Handle Client events better (state changes should be broadcast to other clients from server instead of pushed in server updates)</li>
-
+        <li>Migrate to NodeUnit tests</li>
 
         <h3>Long Term</h3>
 
@@ -52,6 +55,14 @@
                     <li>Include Todo.html using ajax</li>
                 </ul>
             </ul>
+            <li>Create build system</li>
+            <ul>
+                <li>Update browserify output file in build system and <a href="https://github.com/ben-ng/minifyify">uglify/minify</a> it</li>
+                <ul>
+                    <li>Include sourcemaps</li>
+                </ul>
+            </ul>
+            <li>Create a toobusy-js like handler, but have nginx do the blocking</li>
         </ul>
         <li>Create some way of merging lobbies</li>
         <li>Merge javascript into one file</li>

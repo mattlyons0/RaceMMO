@@ -6,7 +6,9 @@
  * Contains Core Game Logic
  *    Since simulation is run on both client and server, it makes sense to share some functions
  */
-
+if (typeof window !== 'undefined') { //We are in the browser
+  var keyboardHandler = require('../client/lib/keyboard');
+}
 var fakeClient = false; //Will be set to true if we are faking being a client on the server for tests
 var onServer = function () {
   if (!fakeClient && 'undefined' !== typeof (global)) //Check if we are on the server and are not pretending to be a client
@@ -119,7 +121,7 @@ var GameCore = function (gameInstance, clientFake) {
   //ClientSide Only Init
   if (!this.server) {
     if (!this.fakeClient)
-      this.keyboard = new THREEx.KeyboardState(); //Keyboard Handler
+      this.keyboard = new keyboardHandler.KeyboardState(); //Keyboard Handler
 
     this.clientCreateConfiguration(); //Create Default Settings for client
     this.serverUpdates = []; //List of recent server updates so we can interpolate
@@ -140,11 +142,6 @@ var GameCore = function (gameInstance, clientFake) {
     this.lastState = {};
   }
 }; //GameCore constructor
-
-//Serverside we set GameCore as the global type
-if ('undefined' !== typeof global) {
-  module.exports = global.GameCore = GameCore; //TODO figure out if i'm even using this
-}
 
 /**
  * Main update loop
@@ -301,3 +298,5 @@ GameCore.prototype.createPhysicsSimulation = function () {
     this.updatePhysics();
   }.bind(this), GameCore.PHYSICS_UPDATE_TIME);
 };
+
+module.exports = global.GameCore = GameCore; //Required to be able to extend GameCore in other classes

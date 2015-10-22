@@ -55,16 +55,16 @@ GamePlayer.prototype.draw = function () {
   //this.colorChanger.change();
 
   //Draw Player Rectangle
-  game.ctx.fillStyle = 'rgba(255,255,255,0.1)'; //Draw grey if online is false
+  this.game.ctx.fillStyle = 'rgba(255,255,255,0.1)'; //Draw grey if online is false
   if (this.state.online === true)
-    game.ctx.fillStyle = this.state.color;
+    this.game.ctx.fillStyle = this.state.color;
   if (this.state.id === this.game.socket.userID)
-    game.ctx.fillStyle = this.game.color;
-  game.ctx.fillRect(this.state.pos.x - this.state.size.hx, this.state.pos.y - this.state.size.hy, this.state.size.x, this.state.size.y);
+    this.game.ctx.fillStyle = this.game.color;
+  this.game.ctx.fillRect(this.state.pos.x - this.state.size.hx, this.state.pos.y - this.state.size.hy, this.state.size.x, this.state.size.y);
   //Draw Player Status
   if (this.state.online === true)
-    game.ctx.fillStyle = this.state.infoColor;
-  game.ctx.fillText(this.state.label, this.state.pos.x + 10, this.state.pos.y + 4);
+    this.game.ctx.fillStyle = this.state.infoColor;
+  this.game.ctx.fillText(this.state.label, this.state.pos.x + 10, this.state.pos.y + 4);
 };
 
 if ('undefined' !== typeof (global)) //If we are serverside export functions

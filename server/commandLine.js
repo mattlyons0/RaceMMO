@@ -3,6 +3,7 @@
 */
 
 var charm = require('charm')();
+var debug = require('debug')('RaceMMO:commandLine');
 
 var commands = [];
 var endCommand;

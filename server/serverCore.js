@@ -4,6 +4,7 @@
  */
 
 var GamePlayer = require('../shared/gamePlayer');
+require('../shared/gameCore');
 
 /**
  * Create player instance for server logic

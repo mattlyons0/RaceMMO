@@ -6,7 +6,6 @@ require('should');
 var utils = require('./testUtils');
 var debug = require('debug')('RaceMMO:test:GameCore');
 var app = require('../bin/www'); //Start Server just for the tests
-var gameCore = require('../shared/gameCore');
 var game;
 
 describe('Game Core Client', function () {
@@ -15,7 +14,7 @@ describe('Game Core Client', function () {
     game = new GameCore(undefined, true); //Tell them we are a fake client
   });
   afterEach(function () {
-    game.socket.disconnect();
+    setTimeout(()=> game.socket.disconnect() , 1000);
   });
 
   it('should initialize clients properly', function (done) {
@@ -25,10 +24,10 @@ describe('Game Core Client', function () {
     game.should.have.property('serverUpdates');
     game.should.have.property('socket');
     var self = game.players[game.socket.userID];
-    self.should.have.property('pos');
-    self.id.should.equal('');
-    self.state.should.equal('not-connected');
-    self.online.should.equal(false);
+    self.state.should.have.property('pos');
+    self.state.id.should.equal('');
+    self.state.label.should.equal('not-connected');
+    self.state.online.should.equal(false);
 
     done();
   });
@@ -38,43 +37,43 @@ describe('Game Core Client', function () {
     setTimeout(function () { //Pass initial setup
       game._pdt.should.be.above(0);
       var oldStateTime = game.players[game.socket.userID].stateTime;
-      var oldStatePos = game.players[game.socket.userID].currentState.pos;
+      var oldStatePos = game.players[game.socket.userID].state.currentState.pos;
       var oldpdt = game._pdte;
       setTimeout(function () {
         game._pdte.should.not.equal(oldpdt); //Physics delta being changed
-        game.players[game.socket.userID].currentState.pos.should.eql(oldStatePos); //We didn't give any input so position should stay same
-        game.players[game.socket.userID].stateTime.should.not.equal(oldStateTime); //Check time is being updated
+        game.players[game.socket.userID].state.currentState.pos.should.eql(oldStatePos); //We didn't give any input so position should stay same
+        game.players[game.socket.userID].state.stateTime.should.not.equal(oldStateTime); //Check time is being updated
 
-        oldStatePos = game.players[game.socket.userID].oldState.pos;
+        oldStatePos = game.players[game.socket.userID].state.oldState.pos;
         //Simulate Keypress to test physics vector
         utils.simulateKeypress(game, ['r']);
         setTimeout(function () {
-          game.players[game.socket.userID].currentState.pos.x.should.equal(oldStatePos.x + (game.playerSpeed * 0.015).fixed(3));
-          game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y);
+          game.players[game.socket.userID].state.currentState.pos.x.should.equal(oldStatePos.x + (game.playerSpeed * 0.015).fixed(3));
+          game.players[game.socket.userID].state.currentState.pos.y.should.equal(oldStatePos.y);
 
-          oldStatePos = game.players[game.socket.userID].oldState.pos;
+          oldStatePos = game.players[game.socket.userID].state.oldState.pos;
           utils.simulateKeypress(game, ['l', 'l']);
           setTimeout(function () {
 
-            game.players[game.socket.userID].currentState.pos.x.should.equal((oldStatePos.x - ((game.playerSpeed * 0.015) * 2)).fixed(3));
-            game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y);
+            game.players[game.socket.userID].state.currentState.pos.x.should.equal((oldStatePos.x - ((game.playerSpeed * 0.015) * 2)).fixed(3));
+            game.players[game.socket.userID].state.currentState.pos.y.should.equal(oldStatePos.y);
 
-            oldStatePos = game.players[game.socket.userID].oldState.pos;
+            oldStatePos = game.players[game.socket.userID].state.oldState.pos;
             utils.simulateKeypress(game, ['l', 'r']);
             setTimeout(function () {
-              game.players[game.socket.userID].currentState.pos.should.eql(oldStatePos);
+              game.players[game.socket.userID].state.currentState.pos.should.eql(oldStatePos);
 
-              oldStatePos = game.players[game.socket.userID].oldState.pos;
+              oldStatePos = game.players[game.socket.userID].state.oldState.pos;
               utils.simulateKeypress(game, ['u']);
               setTimeout(function () {
-                game.players[game.socket.userID].currentState.pos.x.should.equal(oldStatePos.x);
-                game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y - (game.playerSpeed * 0.015).fixed(3));
+                game.players[game.socket.userID].state.currentState.pos.x.should.equal(oldStatePos.x);
+                game.players[game.socket.userID].state.currentState.pos.y.should.equal(oldStatePos.y - (game.playerSpeed * 0.015).fixed(3));
 
-                oldStatePos = game.players[game.socket.userID].oldState.pos;
+                oldStatePos = game.players[game.socket.userID].state.oldState.pos;
                 utils.simulateKeypress(game, ['d']);
                 setTimeout(function () {
-                  game.players[game.socket.userID].currentState.pos.x.should.equal(oldStatePos.x);
-                  game.players[game.socket.userID].currentState.pos.y.should.equal(oldStatePos.y + (game.playerSpeed * 0.015).fixed(3));
+                  game.players[game.socket.userID].state.currentState.pos.x.should.equal(oldStatePos.x);
+                  game.players[game.socket.userID].state.currentState.pos.y.should.equal(oldStatePos.y + (game.playerSpeed * 0.015).fixed(3));
 
                   done();
                 }, 35);
@@ -116,18 +115,20 @@ describe('Game Core Client', function () {
       return false;
     };
     setTimeout(function () {
-      game.players[game.socket.userID].currentState.pos.x.should.equal(game.players[game.socket.userID].oldState.pos.x - (game.playerSpeed * 0.015).fixed(3));
-      game.players[game.socket.userID].currentState.pos.y.should.equal(game.players[game.socket.userID].oldState.pos.y);
+      game.players[game.socket.userID].state.currentState.pos.x.should.equal(game.players[game.socket.userID].state.oldState.pos.x - (game.playerSpeed * 0.015).fixed(3));
+      game.players[game.socket.userID].state.currentState.pos.y.should.equal(game.players[game.socket.userID].state.oldState.pos.y);
 
       done();
     }, 15);
   });
 
   it('should record client connection data correctly', function (done) {
+    game.socket.disconnect();
+    game = new GameCore(undefined, true); //Tell them we are a fake client
     game.socket.on('onconnected', function (msg) {
-      msg.id.should.equal(game.players[game.socket.userID].id);
-      game.players[game.socket.userID].state.should.equal('YOU');
-      game.players[game.socket.userID].online.should.equal(true);
+      msg.id.should.equal(game.players[game.socket.userID].state.id);
+      game.players[game.socket.userID].state.label.should.equal('YOU');
+      game.players[game.socket.userID].state.online.should.equal(true);
 
       done();
     });
@@ -136,8 +137,8 @@ describe('Game Core Client', function () {
   it('should disconnect client correctly', function (done) {
     game.socket.on('onconnected', function () {
       game.socket.on('disconnect', function () {
-        game.players[game.socket.userID].state.should.equal('not-connected');
-        game.players[game.socket.userID].online.should.equal(false);
+        game.players[game.socket.userID].state.label.should.equal('not-connected');
+        game.players[game.socket.userID].state.online.should.equal(false);
         done();
       });
       game.socket.disconnect();
@@ -155,8 +156,8 @@ describe('Game Core Client', function () {
         done();
       }
     });
-    game.players[game.socket.userID].color = '#000000';
-    game.socket.send('c.' + game.players[game.socket.userID].color);
+    game.players[game.socket.userID].state.color = '#000000';
+    game.socket.send('c.' + game.players[game.socket.userID].state.color);
   });
 
   it('should process server updates correctly', function (done) {
@@ -172,10 +173,10 @@ describe('Game Core Client', function () {
       }
       for (var i = 0; i < data.pl.length; i++) {
         var player = data.pl[i];
-        if (player.id === player1) {
-          player.pos.should.eql(game.players[player1].pos);
-        } else if (player.id === player2.id) {
-          player.pos.should.eql(player2.pos);
+        if (player.state.id === player1) {
+          player.state.pos.should.eql(game.players[player1].state.pos);
+        } else if (player.id === player2.state.id) {
+          player.state.pos.should.eql(player2.state.pos);
         }
       }
       test1 = true;

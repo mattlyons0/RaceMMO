@@ -9,7 +9,7 @@ var error = debugLib('RaceMMO:gameServer:error');
 require('../shared/gameCore'); //Import Game Core
 
 
-global.window = global.document = global;
+global.window = global.document = global; //Required to make the timing mechanism in gameCore work
 
 //Initialize Server Vars
 gameServer.fakeLag = 0;
