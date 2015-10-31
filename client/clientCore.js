@@ -240,7 +240,7 @@ GameCore.prototype.clientOnServerUpdateReceived = function (data) {
 GameCore.prototype.clientUpdateLocalPosition = function () {
   if (this.clientPredict) {
     var t = (this.localTime - this.players[this.socket.userID].state.stateTime) / this._pdt; //Time since updated state
-    var oldState = this.players[this.socket.userID].state.oldState.pos;
+    var oldState = this.players[this.socket.userID].oldState.pos;
     var currentState = this.players[this.socket.userID].state.currentState.pos;
 
     this.players[this.socket.userID].state.pos = currentState; //Ensure visual position matches state
@@ -256,11 +256,11 @@ GameCore.prototype.clientUpdatePhysics = function () {
 
   if (this.clientPredict) {
     //Fetch the direction from input buffer and use it to smooth visuals
-    var selfState = this.players[this.socket.userID].state;
-    selfState.oldState.pos = GameCore.mathUtils.pos(selfState.currentState.pos);
-    var nd = this.processInput(selfState); //new direction vector
-    selfState.currentState.pos = GameCore.mathUtils.vAdd(selfState.oldState.pos, nd);
-    selfState.stateTime = this.localTime;
+    var self = this.players[this.socket.userID];
+    self.oldState.pos = GameCore.mathUtils.pos(self.state.currentState.pos);
+    var nd = this.processInput(self.state); //new direction vector
+    self.state.currentState.pos = GameCore.mathUtils.vAdd(self.oldState.pos, nd);
+    self.state.stateTime = this.localTime;
   }
 };
 /**

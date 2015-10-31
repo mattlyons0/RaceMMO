@@ -8,7 +8,7 @@ var app = require('../app');
 var debug = require('debug')('RaceMMO:server');
 var http = require('http');
 var io = require('socket.io');
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var commandLine = require('../server/commandLine');
 
 /**

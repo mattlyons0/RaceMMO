@@ -2,7 +2,7 @@
 
 var gameServer = {games: {}, gameCount: 0, recentGame: undefined};
 
-var uuid = require('node-uuid');
+var uuid = require('uuid');
 var debugLib = require('debug');
 var debug = debugLib('RaceMMO:gameServer');
 var error = debugLib('RaceMMO:gameServer:error');

@@ -2,12 +2,12 @@
   "name": "RaceMMO",
   "version": "0.0.0",
   "description": "A Racing MMO Server",
-  "author": "Matt Lyons <matt@matt-lyons.net",
+  "author": "Matt Lyons <matt@matt-lyons.net>",
   "private": true,
   "scripts": {
-    "build": "node ./node_modules/browserify/bin/cmd.js client/gameClient.js -o public/javascripts/game.js",
-    "buildDebug": "node ./node_modules/browserify/bin/cmd.js client/gameClient.js -o public/javascripts/game.js -d; echo Build Complete!",
+    "build": "node ./node_modules/browserify/bin/cmd.js client/gameClient.js -o public/javascripts/game.js -d",
     "start": "node ./bin/www.js",
+    "devRun": "sh ./devRun.sh",
     "test": "node ./node_modules/mocha/bin/mocha ./test",
     "coverage": "node ./node_modules/istanbul/lib/cli.js cover node_modules/mocha/bin/_mocha -- -R spec",
     "loadTest": "node ./test/stressTest.js"
@@ -21,16 +21,19 @@
     "jade": "~1.11.0",
     "morgan": "~1.6.1",
     "serve-favicon": "~2.3.0",
-    "node-uuid": "~1.4.3",
+    "uuid": "~2.0.1",
     "socket.io": "~1.3.5",
-    "browserify": "~11.2.0"
+    "socket.io-client": "~1.3.5",
+    "browserify": "~12.0.0",
+    "deep-diff": "~0.3.3",
+    "object-hash": "~0.9.2",
+    "deepcopy": "~0.5.0"
   },
   "devDependencies": {
-    "istanbul": "~0.3.17",
+    "istanbul": "~0.4.0",
     "mocha": "~2.3.3",
-    "nodemon": "~1.7.1",
-    "should": "~7.1.0",
-    "socket.io-client": "~1.3.5",
-    "watchify": "~3.4.0"
+    "nodemon": "~1.8.0",
+    "should": "~7.1.1",
+    "onchange": "~2.0.0"
   }
 }

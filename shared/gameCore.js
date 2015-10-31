@@ -150,13 +150,14 @@ var GameCore = function (gameInstance, clientFake) {
 GameCore.prototype.update = function (t) {
   this.dt = this.lastFrameTime ? ((t - this.lastFrameTime) / 1000.0).fixed() : 0.016; //Calculate Delta Time
   this.lastFrameTime = t;
+
   if (!this.server) { //If we arent the server, update the client, otherwise update the server
     this.clientUpdate();
   } else {
     this.serverUpdate();
   }
-  this.updateID = window.requestAnimationFrame(this.update.bind(this), this.viewport); //Schedule next update
 
+  this.updateID = window.requestAnimationFrame(this.update.bind(this), this.viewport); //Schedule next update
   this.updateTime = Math.abs(new Date().getTime() - t); //Time in ms spent on logic update
 };
 /**

@@ -21,14 +21,14 @@ var GamePlayer = function (gameInstance, playerInstance) {
     this.state.online = true;
 
   //Movement
-  this.state.oldState = {pos: {x: 0, y: 0}}; //TODO determine if it would be good to copy the entire previous state to this.oldState
+  this.oldState = {pos: {x: 0, y: 0}, hash: '0', state: {}}; //OldState only contains old position, a hash of the current state, and a duplicate of the state from a update ago
   this.state.currentState = {pos: {x: 0, y: 0}};
   this.state.stateTime = new Date().getTime();
 
   this.state.inputs = []; //History of inputs
 
   //World bounds
-  this.state.posLimits = {
+  this.state.posLimits = { //TODO consider moving this out of state
     xMin: this.state.size.hx,
     xMax: this.game.world.width - this.state.size.hx,
     yMin: this.state.size.hy,

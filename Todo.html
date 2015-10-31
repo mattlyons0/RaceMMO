@@ -5,6 +5,8 @@
         <ul>
             <li>Should probably tell server where you are instead of updating to its location</li>
         </ul>
+        <li>Can crash upon disconnection on large fakelag values</li>
+        <li>Crash when disabling clientPredict</li>
     </ul>
 
     <h2>Features</h2>
@@ -21,10 +23,14 @@
             <li>Cleanup gamePlayer</li>
             <li>Organize www.js</li>
         </ul>
+        <li>Use Debug instead of console.log</li>
+        <li>Automatically detect desync (when server keeps overriding current client every update)</li>
+        <li>Create menu item to pause gameCore loops</li>
         <li>Create State Management system to update states to everyone when a value is changed</li>
         <li>Create composition based system for states <a href="https://medium.com/humans-create-software/composition-over-inheritance-cb6f88070205">(ex1)</a> <a href="http://vasir.net/blog/game-development/how-to-build-entity-component-system-in-javascript">(ex2)</a></li>
         <li>Handle Client events better (state changes should be broadcast to other clients from server instead of pushed in server updates)</li>
-        <li>Migrate to NodeUnit tests</li>
+        <li>Figure out what to do with tests... They all work individually, but when running together in mocha they fail. <a href="http://fredkschott.com/post/2014/05/nodejs-testing-essentials/">(Get more tools)</a>
+            <a href="https://github.com/socketio/socket.io/blob/master/test/socket.io.js">Look at how socket.io does testing</a></li>
 
         <h3>Long Term</h3>
 

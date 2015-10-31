@@ -44,32 +44,32 @@ describe('Game Core Client', function () {
         game.players[game.socket.userID].state.currentState.pos.should.eql(oldStatePos); //We didn't give any input so position should stay same
         game.players[game.socket.userID].state.stateTime.should.not.equal(oldStateTime); //Check time is being updated
 
-        oldStatePos = game.players[game.socket.userID].state.oldState.pos;
+        oldStatePos = game.players[game.socket.userID].oldState.pos;
         //Simulate Keypress to test physics vector
         utils.simulateKeypress(game, ['r']);
         setTimeout(function () {
           game.players[game.socket.userID].state.currentState.pos.x.should.equal(oldStatePos.x + (game.playerSpeed * 0.015).fixed(3));
           game.players[game.socket.userID].state.currentState.pos.y.should.equal(oldStatePos.y);
 
-          oldStatePos = game.players[game.socket.userID].state.oldState.pos;
+          oldStatePos = game.players[game.socket.userID].oldState.pos;
           utils.simulateKeypress(game, ['l', 'l']);
           setTimeout(function () {
 
             game.players[game.socket.userID].state.currentState.pos.x.should.equal((oldStatePos.x - ((game.playerSpeed * 0.015) * 2)).fixed(3));
             game.players[game.socket.userID].state.currentState.pos.y.should.equal(oldStatePos.y);
 
-            oldStatePos = game.players[game.socket.userID].state.oldState.pos;
+            oldStatePos = game.players[game.socket.userID].oldState.pos;
             utils.simulateKeypress(game, ['l', 'r']);
             setTimeout(function () {
               game.players[game.socket.userID].state.currentState.pos.should.eql(oldStatePos);
 
-              oldStatePos = game.players[game.socket.userID].state.oldState.pos;
+              oldStatePos = game.players[game.socket.userID].oldState.pos;
               utils.simulateKeypress(game, ['u']);
               setTimeout(function () {
                 game.players[game.socket.userID].state.currentState.pos.x.should.equal(oldStatePos.x);
                 game.players[game.socket.userID].state.currentState.pos.y.should.equal(oldStatePos.y - (game.playerSpeed * 0.015).fixed(3));
 
-                oldStatePos = game.players[game.socket.userID].state.oldState.pos;
+                oldStatePos = game.players[game.socket.userID].oldState.pos;
                 utils.simulateKeypress(game, ['d']);
                 setTimeout(function () {
                   game.players[game.socket.userID].state.currentState.pos.x.should.equal(oldStatePos.x);

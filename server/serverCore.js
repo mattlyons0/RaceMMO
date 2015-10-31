@@ -6,6 +6,10 @@
 var GamePlayer = require('../shared/gamePlayer');
 require('../shared/gameCore');
 
+var diff = require('deep-diff').diff;
+var hash = require('object-hash');
+var deepcopy = require('deepcopy');
+
 /**
  * Create player instance for server logic
  * @param player instance of player
@@ -33,9 +37,9 @@ GameCore.prototype.serverUpdatePhysics = function () {
   for (var key in this.players) {
     if (this.players.hasOwnProperty(key)) {
       var player = this.players[key];
-      player.state.oldState.pos = GameCore.mathUtils.pos(player.state.pos); //Move current state to oldState
+      player.oldState.pos = GameCore.mathUtils.pos(player.state.pos); //Move current state to oldState
       var newDir = this.processInput(player.state);
-      player.state.pos = GameCore.mathUtils.vAdd(player.state.oldState.pos, newDir);
+      player.state.pos = GameCore.mathUtils.vAdd(player.oldState.pos, newDir);
       player.state.inputs = []; //Remove input queue because they were processed
     }
   }
@@ -78,7 +82,47 @@ GameCore.prototype.serverUpdate = function () {
       player1.instance.emit('onserverupdate', this.lastState);
     }
   }
+
+  this.updateState();
 };
+
+/**
+ * Check what has changed in the state and respond accordingly
+ */
+GameCore.prototype.updateState = function () {
+  var keysChanged = [];
+  //Determine which players changed and assign new hash
+  for (var key in this.players) {
+    if (this.players.hasOwnProperty(key)) {
+      var player = this.players[key];
+      var stateHash = hash.sha1(player.state); //TODO check how long this takes
+      if (player.oldState.hash !== stateHash) { //This players state has changed
+        keysChanged.push(key);
+        player.oldState.hash = stateHash;
+      }
+    }
+  }
+  if (keysChanged.length > 0)
+    console.log(keysChanged.length + ' players state changed.');
+  //Determine what changed and handle changes
+  for (var x = 0; x < keysChanged.length; x++) {
+    var playerChanged = this.players[keysChanged[x]];
+    var changes = diff(playerChanged.oldState.state, playerChanged.state); //TODO check how long this takes
+
+    //Handle Changes
+
+    console.log(changes);
+  }
+  //Save state as old state
+  for (var key1 in this.players) {
+    if (this.players.hasOwnProperty(key1)) {
+      var player1 = this.players[key1];
+
+      player1.oldState.state = deepcopy(player1.state);  //Copy entire state (by memory, not reference)
+    }
+  }
+};
+
 /**
  * Ensure input gets put in the array properly
  * @param client client making the inputs
