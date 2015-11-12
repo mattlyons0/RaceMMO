@@ -127,14 +127,12 @@ var GameCore = function (gameInstance, clientFake) {
     this.serverUpdates = []; //List of recent server updates so we can interpolate
     this.clientConnectToServer(); //Connect to the socket.io server
     this.clientCreatePingTimer(); //Start pinging server and determine latency
-    if (!this.fakeClient) {
-      this.color = localStorage.getItem('color') || GameCore.mathUtils.randomColor(); //Get color from localStorage or use random color
-      localStorage.setItem('color', this.color);
+    if (!this.fakeClient) { //Set Color
+      this.clientChangeColor(localStorage.getItem('color') || GameCore.mathUtils.randomColor()); //Get color from localStorage or use random color
     }
-    this.players[this.socket.userID].state.color = this.color; //Set Players color
 
     //Make debug gui if requested
-    if (String(window.location).indexOf('debug') != -1) {
+    if (String(window.location).indexOf('debug') !== -1) {
       this.clientCreateDebugGui();
     }
   } else { //If we are running this serverside

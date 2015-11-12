@@ -1,3 +1,4 @@
+'use strict';
 /*
  SERVER FUNCTIONS
  Functions specifically for serverSide only
@@ -61,6 +62,8 @@ GameCore.prototype.serverUpdate = function () {
   //  return; //Disables sending same state multiple times, but also causes state match bugs, so I'll comment it until its needed
   //}
   //TODO send unique hash with each serverupdate so we don't have to iterate through every player to check if a update has changed or not
+
+  //Collect update into snapshot update
   var playersData = [];
   var num = 0;
   for (var key in this.players) {
@@ -92,7 +95,7 @@ GameCore.prototype.serverUpdate = function () {
 GameCore.prototype.updateState = function () {
   var keysChanged = [];
   //Determine which players changed and assign new hash
-  for (var key in this.players) {
+  for (let key in this.players) {
     if (this.players.hasOwnProperty(key)) {
       var player = this.players[key];
       var stateHash = hash.sha1(player.state); //TODO check how long this takes
@@ -102,22 +105,40 @@ GameCore.prototype.updateState = function () {
       }
     }
   }
-  if (keysChanged.length > 0)
-    console.log(keysChanged.length + ' players state changed.');
   //Determine what changed and handle changes
   for (var x = 0; x < keysChanged.length; x++) {
     var playerChanged = this.players[keysChanged[x]];
     var changes = diff(playerChanged.oldState.state, playerChanged.state); //TODO check how long this takes
 
     //Handle Changes
+    for (var index = 0; index < changes.length; index++) {
+      var change = changes[index];
+      switch (change.path[0]) {
+        case 'pos':
+        case 'inputs':
+        case 'lastInputTime':
+        case 'lastInputSeq':
+          //These are handled by the physics update loop
+          //TODO consider moving these out of the state as they break the optimization of not having to diff unnecessarily
+          break;
 
-    console.log(changes);
+        case 'color':
+          for (let key in this.players) { //Send all clients that a client changed color
+            if (this.players.hasOwnProperty(key) && key != keysChanged[x]) {
+              this.players[key].instance.send('s.pl.c.' + change.rhs + '.' + keysChanged[x]); //Send which client changed to which color
+            }
+          }
+          break;
+
+        default:
+          console.warn('Unhandled change at ' + change.path[0]);
+      }
+    }
   }
   //Save state as old state
   for (var key1 in this.players) {
     if (this.players.hasOwnProperty(key1)) {
       var player1 = this.players[key1];
-
       player1.oldState.state = deepcopy(player1.state);  //Copy entire state (by memory, not reference)
     }
   }

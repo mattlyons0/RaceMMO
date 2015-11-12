@@ -67,13 +67,8 @@ gameServer._onMessage = function (client, message) {
       client.send('s.p.' + messageParts[1]); //Send ping back so client latency can be calculated
       break;
     case 'c': //Color change
-      client.game.GameCore.players[client.userID].color = messageParts[1];
-      var players = client.game.GameCore.players;
-      for (var key in players) { //Send all clients that a client changed color
-        if (players.hasOwnProperty(key) && key !== client.userID) {
-          players[key].instance.send('s.pl.c.' + messageParts[1] + '.' + client.userID); //Send which client changed color as message part index 3
-        }
-      }
+      client.game.GameCore.players[client.userID].state.color = messageParts[1]; //Store color change
+      //Change will be pushed to other clients next time state is validated
       break;
   }
 };
@@ -199,7 +194,7 @@ gameServer.joinGame = function (gameInstance, playerSocket) {
 
   //Tell all clients in that game this player is joining & tell this player about all other clients
   for (var player in gameInstance.players) {
-    if (gameInstance.players.hasOwnProperty(player) && gameInstance.players[playerSocket.userID] !== player) {
+    if (gameInstance.players.hasOwnProperty(player) && playerSocket.userID !== player) {
       playerSocket.send('s.pl.j.' + player + '.' + gameInstance.GameCore.players[player].color); //Tell current player that other clients exist
       gameInstance.players[player].send('s.pl.j.' + playerSocket.userID + '.' + gameInstance.GameCore.players[playerSocket.userID].color); //Server Player is Joining with [playerID]
     }

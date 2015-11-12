@@ -8,7 +8,6 @@ if (typeof window !== 'undefined') //We are in the browser
 if ('undefined' === typeof (GamePlayer)) //If this hasn't been loaded serverside (unit testing)
   GamePlayer = require('../shared/gamePlayer');
 
-
 /**
  * Handle input clientside
  *  Parse Input and send to server
@@ -347,6 +346,13 @@ GameCore.prototype.clientCreateConfiguration = function () {
   this.lit = 0;
   this.llt = new Date().getTime();
 };
+GameCore.prototype.clientChangeColor = function (color) {
+  this.players[this.socket.userID].state.color = color;
+  console.log(this.socket.userID + " id")
+  localStorage.setItem('color', color);
+  this.socket.send('c.' + color); //'c' for
+  console.log('Changed Color: '+this.players[this.socket.userID].state.color);
+};
 /**
  * Create Debug dat.GUI
  */
@@ -354,11 +360,9 @@ GameCore.prototype.clientCreateDebugGui = function () {
   this.gui = new dat.GUI();
 
   var _playerSettings = this.gui.addFolder('Your Settings');
-  this.colorControl = _playerSettings.addColor(this, 'color');
+  this.colorControl = _playerSettings.addColor(this.players[this.socket.userID].state, 'color');
   this.colorControl.onChange(function (value) {
-    this.players[this.socket.userID].color = value;
-    localStorage.setItem('color', value);
-    this.socket.send('c.' + value); //'c' for color
+    this.clientChangeColor(value);
   }.bind(this));
   _playerSettings.open();
 
@@ -395,13 +399,13 @@ GameCore.prototype.clientCreateDebugGui = function () {
 GameCore.prototype.clientOnJoinGame = function (gameID, gameTime) {
   var selfState = this.players[this.socket.userID].state;
   selfState.infoColor = '#00bb00';
-  selfState.color = this.color;
+
+  //TODO request full state from server
 
   this.instance = {id: gameID};
 
   var serverTime = parseFloat(gameTime.replace('-', '.'));
   this.localTime = serverTime + this.netLatency;
-  this.socket.send('c.' + selfState.color);
 };
 /**
  * Server gave us a game
@@ -457,6 +461,7 @@ GameCore.prototype.clientRemovePlayer = function (id) {
  */
 GameCore.prototype.clientOnOtherClientColorChange = function (id, color) {
   this.players[id].state.color = color;
+  console.log('Color: '+this.players[this.socket.userID].state.color);
 };
 /**
  * Add player who has connected to the server
@@ -465,6 +470,7 @@ GameCore.prototype.clientOnOtherClientColorChange = function (id, color) {
 GameCore.prototype.clientOnOtherClientJoinGame = function (otherID, color) {
   this.createNewPlayer({userID: otherID});
   this.players[otherID].state.color = color;
+  console.log('Color: '+this.players[this.socket.userID].state.color);
 };
 /**
  * Remove player who has disconnected from the server
@@ -596,4 +602,4 @@ GameCore.prototype.clientDrawServer = function () {
   this.ctx.fillStyle = 'rgba(255,255,255,1)'; //Reset Fillstyle
 };
 
-module.exports=GameCore;
+module.exports = GameCore;

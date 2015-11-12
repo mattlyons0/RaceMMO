@@ -3,10 +3,11 @@
     <ul>
         <li>Upon server disconnection and reconnection position isn't updated until you move</li>
         <ul>
-            <li>Should probably tell server where you are instead of updating to its location</li>
+            <li>Should probably tell server where you upon connecting are instead of updating to its location</li>
         </ul>
         <li>Can crash upon disconnection on large fakelag values</li>
         <li>Crash when disabling clientPredict</li>
+        <li>Client doesnt get full state of other entities upon joining</li>
     </ul>
 
     <h2>Features</h2>
@@ -15,6 +16,7 @@
 
         <h3>Short Term</h3>
 
+        <li>Address issue that upon joining, client will need to be given full state of all other entities</li>
         <li>Organize functions</li>
         <ul>
             <li>This means putting functions in an order that makes sense, or splitting into seperate files</li>
@@ -22,6 +24,7 @@
             <li>Cleanup serverCore</li>
             <li>Cleanup gamePlayer</li>
             <li>Organize www.js</li>
+            <li>Remove hacks before using browserify</li>
         </ul>
         <li>Use Debug instead of console.log</li>
         <li>Automatically detect desync (when server keeps overriding current client every update)</li>
@@ -75,7 +78,13 @@
         <li>Determine if setting netOffset using ping is proper or not</li>
         <li>Handle when javascript files fail to load on game page (or when javascript is disabled)</li>
         <li>Handle ipv6 <a href="https://wiki.archlinux.org/index.php/IPv6_tunnel_broker_setup">Test</a></li>
-
+        <li>Optimization</li>
+        <ul>
+            <li>Move away from UUIDs and just use manual indexing (while filling lower unused values)</li>
+            <li>Use enums for event names instead of long strings</li>
+        </ul>
+        <li>Make stable branch which the production server will automatically pull from <a href="https://bocoup.com/weblog/node-stress-test-server">(ex)</a></li>
+        <li>adhere to <a href="https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO">advised socket.io settings</a></li>
 
         <h3>Possible Additions (if needed)</h3>
 
@@ -88,5 +97,10 @@
         <li>Separate GameServer from Webserver (although webserver shouldn't be under much stress once Nginx is setup)</li>
         <li><a href="http://buildnewgames.com/optimizing-websockets-bandwidth/">Optimize Websocket Bandwidth</a></li>
         <li>Investigate <a href="https://github.com/petkaantonov/bluebird/wiki/Optimization-killers">Optimization Killers</a></li>
-        </ul>
+        <li>Investigate <a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy">Proxies</a> for notifications upon changes to state if necessary</li>
+        <li>Investigate socket.io volitile messages for those that don't need to always send 100% reliably</li>
+        <li>Test a <a href="https://bocoup.com/weblog/node-stress-test-analysis">extremely large</a> amount of users <a href="https://bocoup.com/weblog/node-stress-test-procedure">(setup)</a></li>
+        <li>Determine <a href="http://caniuse.com/">browser requirements</a></li>
+        <li>More optimization <a href="http://blog.caustik.com/category/node-js/">1M Concurrent connections!</a></li>
+    </ul>
 </ul>
