@@ -348,10 +348,8 @@ GameCore.prototype.clientCreateConfiguration = function () {
 };
 GameCore.prototype.clientChangeColor = function (color) {
   this.players[this.socket.userID].state.color = color;
-  console.log(this.socket.userID + " id")
   localStorage.setItem('color', color);
   this.socket.send('c.' + color); //'c' for
-  console.log('Changed Color: '+this.players[this.socket.userID].state.color);
 };
 /**
  * Create Debug dat.GUI
@@ -460,17 +458,16 @@ GameCore.prototype.clientRemovePlayer = function (id) {
  * @param color  Parsed Data from Server
  */
 GameCore.prototype.clientOnOtherClientColorChange = function (id, color) {
+  if (id === this.socket.userID)
+    console.warn('The server is overriding your color!');
   this.players[id].state.color = color;
-  console.log('Color: '+this.players[this.socket.userID].state.color);
 };
 /**
  * Add player who has connected to the server
  * @param otherID id of player who has connected
  */
-GameCore.prototype.clientOnOtherClientJoinGame = function (otherID, color) {
+GameCore.prototype.clientOnOtherClientJoinGame = function (otherID) {
   this.createNewPlayer({userID: otherID});
-  this.players[otherID].state.color = color;
-  console.log('Color: '+this.players[this.socket.userID].state.color);
 };
 /**
  * Remove player who has disconnected from the server
@@ -507,13 +504,14 @@ GameCore.prototype.clientOnNetMessage = function (data) {
         case 'pl': //Players (a message about another player in our game)
           switch (command[2]) {
             case 'j': //A player is joining
-              this.clientOnOtherClientJoinGame(command[3], command[4]); //userID, color
+              this.clientOnOtherClientJoinGame(command[3]); //userID
               break;
             case 'c': //Other player color changed
               this.clientOnOtherClientColorChange(command[4], command[3]); //client id that changed, color
               break;
             case 'd': //Other player disconnected
               this.clientOnOtherClientDisconnect(command[3]);
+              break;
           }
           break;
         case 'e': //Game has ended
@@ -544,6 +542,17 @@ GameCore.prototype.clientOnDisconnect = function (data) {
     }
   }
 };
+GameCore.prototype.clientParseStateDump = function (stateDump) {
+  for (var x = 0; x < stateDump.length; x++) {
+    var id = stateDump[x].id;
+    this.clientOnOtherClientJoinGame(id);
+    var state = stateDump[x].state;
+    var current = this.players[id].state;
+    for (var attrib in state) {
+      current[attrib] = state[attrib];
+    }
+  }
+};
 /**
  * Handle Connecting to the server
  */
@@ -563,6 +572,7 @@ GameCore.prototype.clientConnectToServer = function () {
   this.socket.on('onconnected', this.clientOnConnected.bind(this)); //Handle when we connect to server
   this.socket.on('error', this.clientOnDisconnect.bind(this)); //On an error show that we aren't connected
   this.socket.on('message', this.clientOnNetMessage.bind(this)); //On message parse the commands and send to handlers
+  this.socket.on('onstatedump', this.clientParseStateDump.bind(this));
 };
 /**
  * Calculate FPS

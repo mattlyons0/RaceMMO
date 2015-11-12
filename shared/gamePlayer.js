@@ -58,7 +58,6 @@ GamePlayer.prototype.draw = function () {
   this.game.ctx.fillStyle = 'rgba(255,255,255,0.1)'; //Draw grey if online is false
   if (this.state.online === true)
     this.game.ctx.fillStyle = this.state.color;
-  console.log('Drawing: '+this.state.color);
   this.game.ctx.fillRect(this.state.pos.x - this.state.size.hx, this.state.pos.y - this.state.size.hy, this.state.size.x, this.state.size.y);
   //Draw Player Status
   if (this.state.online === true)

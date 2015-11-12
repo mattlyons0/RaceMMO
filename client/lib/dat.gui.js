@@ -3556,7 +3556,8 @@ dat.utils.requestAnimationFrame = (function () {
    * http://paulirish.com/2011/requestanimationframe-for-smart-animating/
    */
 
-  return window.webkitRequestAnimationFrame ||
+  return window.requestAnimationFrame ||
+    window.webkitRequestAnimationFrame ||
       window.mozRequestAnimationFrame ||
       window.oRequestAnimationFrame ||
       window.msRequestAnimationFrame ||

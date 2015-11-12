@@ -143,7 +143,22 @@ GameCore.prototype.updateState = function () {
     }
   }
 };
-
+/**
+ * Send a packet with the states of all the other players in the server (except self)
+ * @param player the player object to send states to
+ */
+GameCore.prototype.dumpStateToClient = function (player) {
+  var totalState = []; //Total state is an array, each index has {id,state} (the player id and its full state respectively)
+  for (var key in this.players) {
+    if (this.players.hasOwnProperty(key) && key !== player.userID) {
+      totalState.push({
+        id: key,
+        state: this.players[key].state
+      });
+    }
+  }
+  this.players[player.userID].instance.emit('onstatedump', totalState);
+};
 /**
  * Ensure input gets put in the array properly
  * @param client client making the inputs
