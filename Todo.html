@@ -1,11 +1,6 @@
 <ul>
     <h2>Bugs</h2>
     <ul>
-        <li>Upon server disconnection and reconnection position isn't updated until you move</li>
-        <ul>
-            <li>Should probably tell server where you upon connecting are instead of updating to its location</li>
-        </ul>
-        <li>Can crash upon disconnection on large fakelag values</li>
         <li>serverCore is inside game.js for some reason (browserify client/server issue?)</li>
     </ul>
 
@@ -24,8 +19,6 @@
             <li>Organize www.js</li>
         </ul>
         <li>Create composition based system for states <a href="https://medium.com/humans-create-software/composition-over-inheritance-cb6f88070205">(ex1)</a> <a href="http://vasir.net/blog/game-development/how-to-build-entity-component-system-in-javascript">(ex2)</a></li>
-        <li>Figure out what to do with tests... They all work individually, but when running together in mocha they fail. <a href="http://fredkschott.com/post/2014/05/nodejs-testing-essentials/">(Get more tools)</a>
-            <a href="https://github.com/socketio/socket.io/blob/master/test/socket.io.js">Look at how socket.io does testing</a></li>
 
         <h3>Long Term</h3>
 
@@ -78,6 +71,8 @@
         <li>Make stable branch which the production server will automatically pull from <a href="https://bocoup.com/weblog/node-stress-test-server">(ex)</a></li>
         <li>adhere to <a href="https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO">advised socket.io settings</a></li>
         <li>Test <a href="https://ci.testling.com/">cross-browser compatability</a></li>
+        <li>Figure out what to do with tests... They all work individually, but when running together in mocha they fail. <a href="http://fredkschott.com/post/2014/05/nodejs-testing-essentials/">(Get more tools)</a>
+            <a href="https://github.com/socketio/socket.io/blob/master/test/socket.io.js">Look at how socket.io does testing</a></li>
 
         <h3>Possible Additions (if needed)</h3>
 

@@ -43,7 +43,7 @@ GameCore.prototype.clientHandleInput = function (manualInput) {
 
   if (input.length) {
     this.inputSeq += 1;
-    this.players[this.socket.userID].state.inputs.push({ //Store input state as a snapshot
+    this.players[this.socket.userID].physicsState.inputs.push({ //Store input state as a snapshot
       inputs: input,
       time: this.localTime.fixed(3),
       seq: this.inputSeq
@@ -71,28 +71,28 @@ GameCore.prototype.clientProcessNetPredictionCorrection = function () {
   var latestServerData = this.serverUpdates[this.serverUpdates.length - 1];
   var myData = latestServerData.pl[this.socket.userID];
   var myServerPos = myData.pos; //Get the client position
-  this.ghosts.serverPosSelf.state.pos = GameCore.mathUtils.pos(myServerPos); //Update Ghost with real position
+  this.ghosts.serverPosSelf.physicsState.pos = GameCore.mathUtils.pos(myServerPos); //Update Ghost with real position
 
   //Local Input Prediction
   var myLastInputOnServer = myData.is;
   if (myLastInputOnServer) { //We haven't moved from our initial position if undef
     var lastInputSeqIndex = -1; //Last input sequence from my input
     //Find input on server
-    for (var i = 0; i < this.players[this.socket.userID].state.inputs.length; ++i) {
-      if (this.players[this.socket.userID].state.inputs[i].seq == myLastInputOnServer) {
+    for (var i = 0; i < this.players[this.socket.userID].physicsState.inputs.length; ++i) {
+      if (this.players[this.socket.userID].physicsState.inputs[i].seq == myLastInputOnServer) {
         lastInputSeqIndex = i;
         break;
       }
     }
-    if (lastInputSeqIndex != -1) { //Server acknowledges that our inputs were accepted
+    if (lastInputSeqIndex !== -1) { //Server acknowledges that our inputs were accepted
       var numberToClear = Math.abs(lastInputSeqIndex - (-1)); //Clear inputs we confirmed are on server
-      this.players[this.socket.userID].state.inputs.splice(0, numberToClear);
-      this.players[this.socket.userID].state.currentState.pos = GameCore.mathUtils.pos(myServerPos); //We know we are at this position because the server confirmed it
-      this.players[this.socket.userID].state.lastInputSeq = lastInputSeqIndex;
+      this.players[this.socket.userID].physicsState.inputs.splice(0, numberToClear);
+      this.players[this.socket.userID].physicsState.currentState.pos = GameCore.mathUtils.pos(myServerPos); //We know we are at this position because the server confirmed it
+      this.players[this.socket.userID].physicsState.lastInputSeq = lastInputSeqIndex;
       //Reapply all inputs that the server hasn't yet confirmed to 'keep' our position the same while confirming the server position
       this.clientUpdatePhysics();
-    } else if (this.players[this.socket.userID].state.inputs.length > (this.netPing / GameCore.PHYSICS_UPDATE_TIME)) { //Warn when inputs haven't been accepted that should have.
-      console.warn(this.players[this.socket.userID].state.inputs.length + ' Inputs have not been accepted by server');
+    } else if (this.players[this.socket.userID].physicsState.inputs.length > (this.netPing / GameCore.PHYSICS_UPDATE_TIME)) { //Warn when inputs haven't been accepted that should have.
+      console.warn(this.players[this.socket.userID].physicsState.inputs.length + ' Inputs have not been accepted by server');
     }
   }
 };
@@ -154,18 +154,18 @@ GameCore.prototype.clientProcessNetUpdates = function () {
         var otherPastPos = previous.pl[id] ? previous.pl[id].pos : undefined;
 
         //Update Destination Ghost
-        this.ghosts.serverPosOther[id].state.pos = GameCore.mathUtils.pos(otherServerPos);
+        this.ghosts.serverPosOther[id].physicsState.pos = GameCore.mathUtils.pos(otherServerPos);
 
         //ghosts.posOther is the destination position, if there is no past position theres no destination
         if (otherPastPos && otherTargetPos) { //If we can update the ghost using lerp great, if not fall back to simply plugging in from server update
-          this.ghosts.posOther[id].state.pos = GameCore.mathUtils.vLerp(otherPastPos, otherTargetPos, timePoint); //Linear interpolation between past and target position at a given time
+          this.ghosts.posOther[id].physicsState.pos = GameCore.mathUtils.vLerp(otherPastPos, otherTargetPos, timePoint); //Linear interpolation between past and target position at a given time
         } else { //Player didn't exist in last server update, so simply plug in his position
-          this.ghosts.posOther[id].state.pos = GameCore.mathUtils.pos(otherServerPos);
+          this.ghosts.posOther[id].physicsState.pos = GameCore.mathUtils.pos(otherServerPos);
         }
         if (this.clientSmoothing && otherPastPos && otherTargetPos) { //Meets the conditions to do lerp, if not we assume we will have more data next server update or smoothing is off
-          this.players[id].state.pos = GameCore.mathUtils.vLerp(this.players[id].state.pos, this.ghosts.posOther[id].state.pos, this._pdt * this.clientSmooth); //lerp serverPos with directionVector with timeDelta*smoothAmt
+          this.players[id].physicsState.pos = GameCore.mathUtils.vLerp(this.players[id].physicsState.pos, this.ghosts.posOther[id].physicsState.pos, this._pdt * this.clientSmooth); //lerp serverPos with directionVector with timeDelta*smoothAmt
         } else { //No Smoothing
-          this.players[id].state.pos = GameCore.mathUtils.pos(this.ghosts.posOther[id].state.pos); //Player Position is the position on the server
+          this.players[id].physicsState.pos = GameCore.mathUtils.pos(this.ghosts.posOther[id].physicsState.pos); //Player Position is the position on the server
         }
       }
     }
@@ -184,13 +184,13 @@ GameCore.prototype.clientProcessNetUpdates = function () {
         myPastPos = myServerPos;
       }
 
-      this.ghosts.serverPosSelf.state.pos = GameCore.mathUtils.pos(myServerPos); //Snap ghost to new server pos
+      this.ghosts.serverPosSelf.physicsState.pos = GameCore.mathUtils.pos(myServerPos); //Snap ghost to new server pos
       var localTarget = GameCore.mathUtils.vLerp(myPastPos, myTargetPos, timePoint);
 
       if (this.clientSmoothing) {
-        this.players[this.socket.userID].state.pos = GameCore.mathUtils.vLerp(this.players[this.socket.userID].state.pos, localTarget, this._pdt * this.clientSmooth);
+        this.players[this.socket.userID].physicsState.pos = GameCore.mathUtils.vLerp(this.players[this.socket.userID].physicsState.pos, localTarget, this._pdt * this.clientSmooth);
       } else {
-        this.players[this.socket.userID].state.pos = GameCore.mathUtils.pos(localTarget);
+        this.players[this.socket.userID].physicsState.pos = GameCore.mathUtils.pos(localTarget);
       }
     }
   }
@@ -211,12 +211,12 @@ GameCore.prototype.clientOnServerUpdateReceived = function (data) {
     }
   }
   if (this.serverUpdates.length === 0) { //Upon first tick, update position from server
-    this.players[this.socket.userID].state.currentState.pos = GameCore.mathUtils.pos(pl[this.socket.userID].pos);
+    this.players[this.socket.userID].physicsState.currentState.pos = GameCore.mathUtils.pos(pl[this.socket.userID].pos);
   }
   if (this.naiveApproach) {
     for (var key in this.players) {
       if (this.players.hasOwnProperty(key)) {
-        this.players[key].state.pos = GameCore.mathUtils.pos(pl[key].pos);
+        this.players[key].physicsState.pos = GameCore.mathUtils.pos(pl[key].pos);
       }
     }
   } else { //Lerp Approach
@@ -236,19 +236,19 @@ GameCore.prototype.clientOnServerUpdateReceived = function (data) {
  */
 GameCore.prototype.clientUpdateLocalPosition = function () {
   if (this.clientPredict) {
-    var t = (this.localTime - this.players[this.socket.userID].state.stateTime) / this._pdt; //Time since updated state
-    var oldState = this.players[this.socket.userID].oldState.pos;
-    var currentState = this.players[this.socket.userID].state.currentState.pos;
+    var t = (this.localTime - this.players[this.socket.userID].physicsState.stateTime) / this._pdt; //Time since updated state
+    var oldState = this.players[this.socket.userID].physicsState.oldPos;
+    var currentState = this.players[this.socket.userID].physicsState.currentState.pos;
 
-    this.players[this.socket.userID].state.pos = currentState; //Ensure visual position matches state
-    this.checkCollision(this.players[this.socket.userID].state); //Keep in world
+    this.players[this.socket.userID].physicsState.pos = currentState; //Ensure visual position matches state
+    this.checkCollision(this.players[this.socket.userID]); //Keep in world
   }
 };
 /**
  * Calculate Physics clientside
  */
 GameCore.prototype.clientUpdatePhysics = function () {
-  if(this.freezeLogic)
+  if (this.freezeLogic)
     return; //Don't do anything if logic is frozen
   this.clientHandleInput();
   this.clientUpdateLocalPosition();
@@ -256,10 +256,10 @@ GameCore.prototype.clientUpdatePhysics = function () {
   if (this.clientPredict) {
     //Fetch the direction from input buffer and use it to smooth visuals
     var self = this.players[this.socket.userID];
-    self.oldState.pos = GameCore.mathUtils.pos(self.state.currentState.pos);
-    var nd = this.processInput(self.state); //new direction vector
-    self.state.currentState.pos = GameCore.mathUtils.vAdd(self.oldState.pos, nd);
-    self.state.stateTime = this.localTime;
+    self.physicsState.oldPos = GameCore.mathUtils.pos(self.physicsState.currentState.pos);
+    var nd = this.processInput(self.physicsState); //new direction vector
+    self.physicsState.currentState.pos = GameCore.mathUtils.vAdd(self.physicsState.oldPos, nd);
+    self.physicsState.stateTime = this.localTime;
   }
 };
 /**
@@ -351,6 +351,11 @@ GameCore.prototype.clientCreateConfiguration = function () {
   this.llt = new Date().getTime();
 };
 GameCore.prototype.clientChangeColor = function (color) {
+  if (this.fakeClient)
+    return;
+  if (!color) {
+    color = (localStorage.getItem('color') || GameCore.mathUtils.randomColor());
+  }
   this.players[this.socket.userID].state.color = color;
   localStorage.setItem('color', color);
   this.socket.send('c.' + color); //'c' for
@@ -400,6 +405,7 @@ GameCore.prototype.clientCreateDebugGui = function () {
  * @param data  Parsed Data from Server
  */
 GameCore.prototype.clientOnJoinGame = function (gameID, gameTime) {
+  this.clientChangeColor(); //Send color to other server in case it doesn't already have it.
   var selfState = this.players[this.socket.userID].state;
   selfState.infoColor = '#00bb00';
 
@@ -443,8 +449,8 @@ GameCore.prototype.clientCreateNewPlayer = function (id) {
     this.ghosts.serverPosOther[id].state.infoColor = 'rgba(255,255,255,0.2)';
     this.ghosts.posOther[id].state.label = 'destPos';
     this.ghosts.serverPosOther[id].state.label = 'serverPos';
-    this.ghosts.posOther[id].state.pos = {x: 0, y: 0};
-    this.ghosts.serverPosOther[id].state.pos = {x: 0, y: 0};
+    this.ghosts.posOther[id].physicsState.pos = {x: 0, y: 0};
+    this.ghosts.serverPosOther[id].physicsState.pos = {x: 0, y: 0};
   }
 
 };
@@ -535,7 +541,7 @@ GameCore.prototype.clientOnDisconnect = function (data) {
   //We don't know if the other player is still connected, we arent so everything goes offline
   var selfState = this.players[this.socket.userID].state;
   selfState.infoColor = 'rgba(255,255,255,0.1)';
-  selfState.state = 'not-connected';
+  selfState.label = 'not-connected';
   selfState.online = false;
 
   for (var key in this.players) {

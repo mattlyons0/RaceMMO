@@ -11,21 +11,27 @@ var GamePlayer = function (gameInstance, playerInstance) {
 
   //Setup State
   this.state = {};
-  this.state.pos = {x: 0, y: 0};
   this.state.size = {x: 16, y: 16, hx: 8, hy: 8}; //x,y,heightX,heightY
   this.state.id = ''; //Will be assigned later
-  this.state.label = 'not-connected'; //TODO remove this
+  this.state.label = 'not-connected';
   this.state.online = false;
 
-  if (playerInstance)
+  //Setup Physics State
+  this.physicsState = {};
+  this.physicsState.pos = {x: 0, y: 0};
+  this.physicsState.oldPos = {x: 0, y: 0};
+  this.physicsState.inputs = []; //History of inputs
+  this.physicsState.lastInputTime = 0;
+  this.physicsState.lastInputSeq = 0;
+  this.physicsState.currentState = {pos: {x: 0, y: 0}};
+  this.physicsState.stateTime = new Date().getTime();
+
+  if (playerInstance) {
     this.state.online = true;
+    this.state.label = 'connected';
+  }
 
-  //Movement
-  this.oldState = {pos: {x: 0, y: 0}, hash: '0', state: {}}; //OldState only contains old position, a hash of the current state, and a duplicate of the state from a update ago
-  this.state.currentState = {pos: {x: 0, y: 0}};
-  this.state.stateTime = new Date().getTime();
-
-  this.state.inputs = []; //History of inputs
+  this.oldState = {hash: '0', state: {}}; //OldState only contains a hash of the current state, and a duplicate of the state from a update ago
 
   //World bounds
   this.state.posLimits = { //TODO consider moving this out of state
@@ -58,11 +64,11 @@ GamePlayer.prototype.draw = function () {
   this.game.ctx.fillStyle = 'rgba(255,255,255,0.1)'; //Draw grey if online is false
   if (this.state.online === true)
     this.game.ctx.fillStyle = this.state.color;
-  this.game.ctx.fillRect(this.state.pos.x - this.state.size.hx, this.state.pos.y - this.state.size.hy, this.state.size.x, this.state.size.y);
+  this.game.ctx.fillRect(this.physicsState.pos.x - this.state.size.hx, this.physicsState.pos.y - this.state.size.hy, this.state.size.x, this.state.size.y);
   //Draw Player Status
   if (this.state.online === true)
     this.game.ctx.fillStyle = this.state.infoColor;
-  this.game.ctx.fillText(this.state.label, this.state.pos.x + 10, this.state.pos.y + 4);
+  this.game.ctx.fillText(this.state.label, this.physicsState.pos.x + 10, this.physicsState.pos.y + 4);
 };
 
 module.exports = GamePlayer;

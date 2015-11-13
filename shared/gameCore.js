@@ -97,7 +97,7 @@ var GameCore = function (gameInstance, clientFake) {
     //Setup Ghosts
     this.ghosts.serverPosSelf.state.infoColor = 'rgba(255,255,255,0.2)';
     this.ghosts.serverPosSelf.state.label = 'serverPos';
-    this.ghosts.serverPosSelf.state.pos = {x: 20, y: 20};
+    this.ghosts.serverPosSelf.physicsState.pos = {x: 20, y: 20};
   }
 
   this.playerSpeed = 109; //Movespeed in pixels (used 66 times per second)
@@ -119,9 +119,7 @@ var GameCore = function (gameInstance, clientFake) {
     this.serverUpdates = []; //List of recent server updates so we can interpolate
     this.clientConnectToServer(); //Connect to the socket.io server
     this.clientCreatePingTimer(); //Start pinging server and determine latency
-    if (!this.fakeClient) { //Set Color
-      this.clientChangeColor(localStorage.getItem('color') || GameCore.mathUtils.randomColor()); //Get color from localStorage or use random color
-    }
+    this.clientChangeColor(); //Grab color
 
     //Make debug gui if requested
     if (String(window.location).indexOf('debug') !== -1) {
@@ -152,40 +150,40 @@ GameCore.prototype.update = function (t) {
 };
 /**
  * Check collision between the world bounds and the item
- * @param itemState state of item to check against the world bounds
+ * @param item item with physicsState and state to use state.posLimits and physicsState.pos
  */
-GameCore.prototype.checkCollision = function (itemState) {
-  if (itemState.pos.x <= itemState.posLimits.xMin) { //Left Wall
-    itemState.pos.x = itemState.posLimits.xMin;
+GameCore.prototype.checkCollision = function (item) {
+  if (item.physicsState.pos.x <= item.state.posLimits.xMin) { //Left Wall
+    item.physicsState.pos.x = item.state.posLimits.xMin;
   }
-  if (itemState.pos.x >= itemState.posLimits.xMax) { //Right Wall
-    itemState.pos.x = itemState.posLimits.xMax;
+  if (item.physicsState.pos.x >= item.state.posLimits.xMax) { //Right Wall
+    item.physicsState.pos.x = item.state.posLimits.xMax;
   }
-  if (itemState.pos.y <= itemState.posLimits.yMin) { //Top Wall
-    itemState.pos.y = itemState.posLimits.yMin;
+  if (item.physicsState.pos.y <= item.state.posLimits.yMin) { //Top Wall
+    item.physicsState.pos.y = item.state.posLimits.yMin;
   }
-  if (itemState.pos.y >= itemState.posLimits.yMax) { //Bottom Wall
-    itemState.pos.y = itemState.posLimits.yMax;
+  if (item.physicsState.pos.y >= item.state.posLimits.yMax) { //Bottom Wall
+    item.physicsState.pos.y = item.state.posLimits.yMax;
   }
 
   //Fixed point helps determinism
-  itemState.pos.x = itemState.pos.x.fixed(4);
-  itemState.pos.y = itemState.pos.y.fixed(4);
+  item.physicsState.pos.x = item.physicsState.pos.x.fixed(4);
+  item.physicsState.pos.y = item.physicsState.pos.y.fixed(4);
 };
 /**
  * Process inputs received since last update
- * @param playerState player state to process inputs for
+ * @param physicsState player state to process inputs for
  * @returns {*} resulting vector from inputs
  */
-GameCore.prototype.processInput = function (playerState) {
+GameCore.prototype.processInput = function (physicsState) {
   var xDir = 0;
   var yDir = 0;
-  var ic = playerState.inputs.length; //Input Count
+  var ic = physicsState.inputs.length; //Input Count
   if (ic) {
     for (var x = 0; x < ic; ++x) {
-      if (playerState.inputs[x].seq <= playerState.lastInputSeq) continue; //Skip if we have simulated it locally
+      if (physicsState.inputs[x].seq <= physicsState.lastInputSeq) continue; //Skip if we have simulated it locally
 
-      var input = playerState.inputs[x].inputs;
+      var input = physicsState.inputs[x].inputs;
       var c = input.length;
       for (var i = 0; i < c; ++i) {
         var key = input[i];
@@ -207,10 +205,10 @@ GameCore.prototype.processInput = function (playerState) {
     }
   }
   var resultingVector = this.physicsMovementVectorFromDirection(xDir, yDir);
-  if (playerState.inputs.length) {
+  if (physicsState.inputs.length) {
     //Clear array of proccessed inputs
-    playerState.lastInputTime = playerState.inputs[ic - 1].time;
-    playerState.lastInputSeq = playerState.inputs[ic - 1].seq;
+    physicsState.lastInputTime = physicsState.inputs[ic - 1].time;
+    physicsState.lastInputSeq = physicsState.inputs[ic - 1].seq;
   }
   return resultingVector;
 };
@@ -261,6 +259,7 @@ GameCore.prototype.createNewPlayer = function (playerInstance) {
  * @param playerInstance instance of player (only userID field is used)
  */
 GameCore.prototype.removePlayer = function (playerInstance) {
+  debug('Removing Player')
   if (this.server) {
     this.serverRemovePlayer(playerInstance);
   } else {

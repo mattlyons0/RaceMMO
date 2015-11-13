@@ -34,7 +34,7 @@ setInterval(function () {
  * @param message message from client
  */
 gameServer.onMessage = function (client, message) {
-  if (this.fakeLag) { //If we are faking latencyf
+  if (this.fakeLag) { //If we are faking latency
     //Store input messages to emulate lag
     gameServer.messages.push({client: client, message: message});
 
@@ -143,6 +143,15 @@ gameServer.endGame = function (gameID, userID) {
  * @param client client which disconnected
  */
 gameServer.onDisconnect = function (client) {
+  if (this.fakeLag) {
+    setTimeout(function () { //Disconnect delayed
+      gameServer._onDisconnect(client);
+    }.bind(this), this.fakeLag);
+  } else {
+    this._onDisconnect(client);
+  }
+};
+gameServer._onDisconnect = function (client) {
   if (client.game && client.game.id) { //If the client was in a game, remove them from that game's instance and notify all other players in that game
     delete client.game.players[client.userID];
     client.game.playerCount--;

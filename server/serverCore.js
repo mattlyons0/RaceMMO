@@ -18,7 +18,7 @@ var deepcopy = require('deepcopy');
 GameCore.prototype.serverCreateNewPlayer = function (player) {
   this.players[player.userID] = new GamePlayer(this, player);
   var playerObj = this.players[player.userID];
-  playerObj.state.pos =
+  playerObj.physicsState.pos =
   { //Generate random starting positions for each player
     x: GameCore.mathUtils.randomInt(playerObj.state.posLimits.xMin, playerObj.state.posLimits.xMax),
     y: GameCore.mathUtils.randomInt(playerObj.state.posLimits.yMin, playerObj.state.posLimits.yMax)
@@ -38,10 +38,10 @@ GameCore.prototype.serverUpdatePhysics = function () {
   for (var key in this.players) {
     if (this.players.hasOwnProperty(key)) {
       var player = this.players[key];
-      player.oldState.pos = GameCore.mathUtils.pos(player.state.pos); //Move current state to oldState
-      var newDir = this.processInput(player.state);
-      player.state.pos = GameCore.mathUtils.vAdd(player.oldState.pos, newDir);
-      player.state.inputs = []; //Remove input queue because they were processed
+      player.physicsState.oldPos = GameCore.mathUtils.pos(player.physicsState.pos); //Move current state to oldState
+      var newDir = this.processInput(player.physicsState);
+      player.physicsState.pos = GameCore.mathUtils.vAdd(player.physicsState.oldPos, newDir);
+      player.physicsState.inputs = []; //Remove input queue because they were processed
     }
   }
   //Seperate loops because we want collision check to happen after movement
@@ -49,7 +49,7 @@ GameCore.prototype.serverUpdatePhysics = function () {
   for (var key1 in this.players) {
     if (this.players.hasOwnProperty(key1)) {
       var player1 = this.players[key1];
-      this.checkCollision(player1.state);
+      this.checkCollision(player1);
     }
   }
 };
@@ -69,7 +69,7 @@ GameCore.prototype.serverUpdate = function () {
   for (var key in this.players) {
     if (this.players.hasOwnProperty(key)) {
       var player = this.players[key];
-      playersData[num] = {id: key, pos: player.state.pos, is: player.state.lastInputSeq};
+      playersData[num] = {id: key, pos: player.physicsState.pos, is: player.physicsState.lastInputSeq};
       num++;
     }
   }
@@ -114,14 +114,6 @@ GameCore.prototype.updateState = function () {
     for (var index = 0; index < changes.length; index++) {
       var change = changes[index];
       switch (change.path[0]) {
-        case 'pos':
-        case 'inputs':
-        case 'lastInputTime':
-        case 'lastInputSeq':
-          //These are handled by the physics update loop
-          //TODO consider moving these out of the state as they break the optimization of not having to diff unnecessarily
-          break;
-
         case 'color':
           for (let key in this.players) { //Send all clients that a client changed color
             if (this.players.hasOwnProperty(key) && key != keysChanged[x]) {
@@ -168,7 +160,7 @@ GameCore.prototype.dumpStateToClient = function (player) {
  */
 GameCore.prototype.handleServerInput = function (client, input, inputTime, inputSeq) {
   var playerClient = this.players[client.userID];//Figure out which player gave the input
-  playerClient.state.inputs.push({inputs: input, time: inputTime, seq: inputSeq}); //Push into array of stored inputs
+  playerClient.physicsState.inputs.push({inputs: input, time: inputTime, seq: inputSeq}); //Push into array of stored inputs
 };
 
 /**
