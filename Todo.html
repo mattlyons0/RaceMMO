@@ -7,6 +7,7 @@
         </ul>
         <li>Can crash upon disconnection on large fakelag values</li>
         <li>Crash when disabling clientPredict</li>
+        <li>serverCore is inside game.js for some reason...</li>
     </ul>
 
     <h2>Features</h2>
@@ -23,7 +24,6 @@
             <li>Cleanup gamePlayer</li>
             <li>Organize www.js</li>
         </ul>
-        <li>Use Debug instead of console.log on clientside as well</li>
         <li>Automatically detect desync (when server keeps overriding current client every update)</li>
         <li>Create menu item to pause gameCore loops</li>
         <li>Create State Management system to update states to everyone when a value is changed</li>
@@ -82,6 +82,7 @@
         </ul>
         <li>Make stable branch which the production server will automatically pull from <a href="https://bocoup.com/weblog/node-stress-test-server">(ex)</a></li>
         <li>adhere to <a href="https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO">advised socket.io settings</a></li>
+        <li>Test <a href="https://ci.testling.com/">cross-browser compatability</a></li>
 
         <h3>Possible Additions (if needed)</h3>
 
@@ -99,5 +100,6 @@
         <li>Test a <a href="https://bocoup.com/weblog/node-stress-test-analysis">extremely large</a> amount of users <a href="https://bocoup.com/weblog/node-stress-test-procedure">(setup)</a></li>
         <li>Determine <a href="http://caniuse.com/">browser requirements</a></li>
         <li>More optimization <a href="http://blog.caustik.com/category/node-js/">1M Concurrent connections!</a></li>
+        <li>Check <a href="https://blog.codecentric.de/en/2014/02/cross-platform-javascript/">cross platform javascript guide</a></li>
     </ul>
 </ul>

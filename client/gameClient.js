@@ -7,6 +7,9 @@ require('./clientCore');
 var game = {};
 //when loading we store refs to our canvases and initialize a game instance
 window.onload = function () {
+  window.debug = require('debug');
+  window.debug('RaceMMO:GameClient')('Debugging Enabled');
+
   game = new GameCore(); //Create the game
 
   game.viewport = document.getElementById('canvas');

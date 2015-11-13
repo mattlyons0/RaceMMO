@@ -3,6 +3,7 @@
  CLIENTSIDE FUNCTIONS
  Functions for clientside only
  */
+var debug = require('debug')('RaceMMO:ClientCore');
 var dat = require('../client/lib/dat.gui');
 
 /**
@@ -412,7 +413,7 @@ GameCore.prototype.clientOnConnected = function (data) {
   selfState.online = true;
 
   //Migrate Current Client from default ID 0 to its given ID
-  console.log('Server Assigned us ID: ' + data.id);
+  debug('Server Assigned us ID: ' + data.id);
   this.players[data.id] = this.players[this.socket.userID];
   delete this.players[this.socket.userID]; //Complete the move
   this.socket.userID = data.id;

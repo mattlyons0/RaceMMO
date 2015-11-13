@@ -6,7 +6,7 @@
  * Contains Core Game Logic
  *    Since simulation is run on both client and server, it makes sense to share some functions
  */
-
+var debug = require('debug')('RaceMMO:GameCore');
 /**
  * Main update loop runs on requestAnimationFrame, which will fallback to a setTimout loop on the server
  * @param window object to add/find requestAnimationFrame
@@ -66,10 +66,10 @@ var GameCore = function (gameInstance, clientFake) {
   } else
     require('../client/clientCore');
   if (this.inBrowser()) { //Keyboard will crash if we arent in the browser
+    debug('Init Keyboard')
     var keyboardHandler = require('../client/lib/keyboard');
     this.keyboard = new keyboardHandler.KeyboardState(); //Keyboard Handler
   }
-
   setupTiming(typeof window === 'undefined' ? global : window); //Create timing mechanism that works both serverside and clientside
   //This way we can use requestAnimationFrame on both sides
 
@@ -81,7 +81,7 @@ var GameCore = function (gameInstance, clientFake) {
   if (this.server) { //Add clients reported from GameServer to the simulation
     for (var key in this.instance.players) {
       if (this.instance.players.hasOwnProperty(key)) {
-        console.log('adding player ' + key);
+        debug('adding player ' + key);
         this.createNewPlayer(this.instance.players[key]);
       }
     }
@@ -255,7 +255,7 @@ GameCore.prototype.createNewPlayer = function (playerInstance) {
   } else {
     this.clientCreateNewPlayer(playerInstance.userID);
   }
-  //console.log('Created player ' + playerInstance.userID);
+  //debug('Created player ' + playerInstance.userID);
 };
 /**
  * Remove player from local version of server
@@ -267,7 +267,7 @@ GameCore.prototype.removePlayer = function (playerInstance) {
   } else {
     this.clientRemovePlayer(playerInstance.userID);
   }
-  //console.log('Removed player ' + playerInstance.userID);
+  //debug('Removed player ' + playerInstance.userID);
 };
 
 /**
@@ -295,7 +295,7 @@ GameCore.prototype.createPhysicsSimulation = function () {
  * @returns {boolean} true if we are in a browser
  */
 GameCore.prototype.inBrowser = function () {
-  return (typeof window === 'undefined');
+  return (process.browser === true);
 };
 
 global.GamePlayer = require('./gamePlayer'); //GamePlayer access for serverCore/clientCore
