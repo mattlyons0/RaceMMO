@@ -5,7 +5,7 @@
     ".git",
     "node_modules",
     "public",
-    ".html",
+    "*.html",
     ".jade",
     "test"
   ]

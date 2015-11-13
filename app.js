@@ -1,5 +1,8 @@
 'use strict';
-
+/**
+ * Configure Servers
+ *  Namely Express
+ */
 var express = require('express');
 var toobusy = require('toobusy-js');
 var path = require('path');
@@ -15,19 +18,21 @@ var play = require('./routes/play');
 
 var app = express();
 
-setupJade();
-setupMorgan();
-setupTooBusy();
-setupPaths();
+setupJade(); //Setup templating engine
+setupMorgan(); //Setup express logging
+setupTooBusy(); //Setup extreme load handling
+setupPaths(); //Web URL Paths
 setupErrorHandlers();
+
+//Shutdown gracefully
 if (typeof process === 'function') //Don't crash when running mocha
   process.on('SIGINT', shutdown); //Gracefully Shutdown
+
 
 function setupJade() {
   app.set('views', path.join(__dirname, 'views'));
   app.set('view engine', 'jade');
 }
-
 function setupMorgan() {
   if (app.get('env') === 'development') {
     app.use(logger('dev', {
@@ -48,7 +53,7 @@ function setupMorgan() {
   }
 }
 function setupTooBusy() {
-  toobusy.maxLag(500); //Seems to get rid of 503's at startup
+  toobusy.maxLag(500);
   //Block requests when server is overloaded
   app.use(function (req, res, next) {
     if (toobusy()) {
@@ -61,7 +66,19 @@ function setupTooBusy() {
     }
   });
 }
+function setupPaths() {
+  // uncomment after placing your favicon in /public
+  //app.use(favicon(__dirname + '/public/favicon.ico'));
+  app.use(bodyParser.json());
+  app.use(bodyParser.urlencoded({extended: false}));
+  app.use(cookieParser());
+  app.use(express.static(path.join(__dirname, 'public'))); //Serve files from public
+  app.use('/javascripts/game', express.static(__dirname + '/shared')); //Serve files from shared into public javascript folder
+  app.use('/javascripts/game', express.static(__dirname + '/client')); //Serve files from client into public javascript folder
 
+  app.use('/', routes);
+  app.use('/play', play);
+}
 function setupErrorHandlers() {
   // catch 404 and forward to error handler
   app.use(function (req, res, next) {
@@ -101,22 +118,8 @@ function setupErrorHandlers() {
     }
   }
 }
-
-function setupPaths() {
-  // uncomment after placing your favicon in /public
-  //app.use(favicon(__dirname + '/public/favicon.ico'));
-  app.use(bodyParser.json());
-  app.use(bodyParser.urlencoded({extended: false}));
-  app.use(cookieParser());
-  app.use(express.static(path.join(__dirname, 'public'))); //Serve files from public
-  app.use('/javascripts/game', express.static(__dirname + '/shared')); //Serve files from shared into public javascript folder
-  app.use('/javascripts/game', express.static(__dirname + '/client')); //Serve files from client into public javascript folder
-
-  app.use('/', routes);
-  app.use('/play', play);
-}
-
 //Manage shutdown gracefully
+//Todo handle shutting down gameservers
 var shutdown = function () {
   debug('Received shutdown request. Server is shutting down...');
   app.sio.close();

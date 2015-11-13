@@ -259,7 +259,6 @@ GameCore.prototype.createNewPlayer = function (playerInstance) {
  * @param playerInstance instance of player (only userID field is used)
  */
 GameCore.prototype.removePlayer = function (playerInstance) {
-  debug('Removing Player')
   if (this.server) {
     this.serverRemovePlayer(playerInstance);
   } else {

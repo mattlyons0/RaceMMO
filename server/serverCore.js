@@ -1,15 +1,14 @@
 'use strict';
-/*
- SERVER FUNCTIONS
- Functions specifically for serverSide only
+/**
+ * Server functions specifically for serverSide only
  */
 
 require('../shared/gameCore');
 
 var debug = require('debug')('RaceMMO:ServerCore');
-var diff = require('deep-diff').diff;
-var hash = require('object-hash');
-var deepcopy = require('deepcopy');
+var diff = require('deep-diff').diff; //For diffing objects
+var hash = require('object-hash'); //For hashing objects
+var deepcopy = require('deepcopy'); //For copying objects
 
 /**
  * Create player instance for server logic
@@ -30,28 +29,6 @@ GameCore.prototype.serverCreateNewPlayer = function (player) {
  */
 GameCore.prototype.serverRemovePlayer = function (player) {
   delete this.players[player.userID];
-};
-/**
- * Updated every 15ms, simulates world state
- */
-GameCore.prototype.serverUpdatePhysics = function () {
-  for (var key in this.players) {
-    if (this.players.hasOwnProperty(key)) {
-      var player = this.players[key];
-      player.physicsState.oldPos = GameCore.mathUtils.pos(player.physicsState.pos); //Move current state to oldState
-      var newDir = this.processInput(player.physicsState);
-      player.physicsState.pos = GameCore.mathUtils.vAdd(player.physicsState.oldPos, newDir);
-      player.physicsState.inputs = []; //Remove input queue because they were processed
-    }
-  }
-  //Seperate loops because we want collision check to happen after movement
-  //Do Collision
-  for (var key1 in this.players) {
-    if (this.players.hasOwnProperty(key1)) {
-      var player1 = this.players[key1];
-      this.checkCollision(player1);
-    }
-  }
 };
 /**
  * Notify clients of changes to player states
@@ -85,10 +62,30 @@ GameCore.prototype.serverUpdate = function () {
       player1.instance.emit('onserverupdate', this.lastState);
     }
   }
-
   this.updateState();
 };
-
+/**
+ * Updated every 15ms, simulates world state
+ */
+GameCore.prototype.serverUpdatePhysics = function () {
+  for (var key in this.players) {
+    if (this.players.hasOwnProperty(key)) {
+      var player = this.players[key];
+      player.physicsState.oldPos = GameCore.mathUtils.pos(player.physicsState.pos); //Move current state to oldState
+      var newDir = this.processInput(player.physicsState);
+      player.physicsState.pos = GameCore.mathUtils.vAdd(player.physicsState.oldPos, newDir);
+      player.physicsState.inputs = []; //Remove input queue because they were processed
+    }
+  }
+  //Separate loops because we want collision check to happen after movement
+  //Do Collision
+  for (var key1 in this.players) {
+    if (this.players.hasOwnProperty(key1)) {
+      var player1 = this.players[key1];
+      this.checkCollision(player1);
+    }
+  }
+};
 /**
  * Check what has changed in the state and respond accordingly
  */
@@ -162,7 +159,6 @@ GameCore.prototype.handleServerInput = function (client, input, inputTime, input
   var playerClient = this.players[client.userID];//Figure out which player gave the input
   playerClient.physicsState.inputs.push({inputs: input, time: inputTime, seq: inputSeq}); //Push into array of stored inputs
 };
-
 /**
  * For the server, cancel the setTimeout
  */

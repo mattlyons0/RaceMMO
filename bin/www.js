@@ -1,7 +1,10 @@
 'use strict';
-
 /**
- * Module dependencies.
+ * Startup servers
+ *  Webserver using Express
+ *  Socket.io Server
+ *  GameServer
+ *  Terminal Commands
  */
 
 var app = require('../app');
@@ -11,43 +14,41 @@ var io = require('socket.io');
 var uuid = require('uuid');
 var commandLine = require('../server/commandLine');
 
-/**
- * Get port from environment and store in Express.
- */
-
+//Set express port
 var port = normalizePort(process.env.PORT || '3000');
 app.set('port', port);
 
-/**
- * Create HTTP server.
- */
-
+//Create HTTP server
 var server = http.createServer(app);
 app.server = server;
-
-/**
- * Listen on provided port, on all network interfaces.
- */
-
+//Listen on server
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
 
-/*
- Setup Socket.io Server
- */
+//SocketIO setup
 var sio = io(server);
 app.sio = sio;
 setupSocketIO(sio);
 
-/*
- Setup Game Server
- */
-
+//GameServer setup
 var gameServer = require('../server/gameServer');
 app.gameServer = gameServer;
 setupGameServer(gameServer);
+
+//CommandLine setup
 commandLine.setupCommandLine(gameServer);
+
+
+/**
+ * Setup Socket.IO Listener
+ */
+
+function setupSocketIO(sio) { //TODO note, these timeouts may need to be altered
+  sio.set('heartbeat interval', 1000); //1 sec interval to check if clients are alive
+  sio.set('heartbeat timeout', 5000); //5 sec timeout to drop dead clients if they are still dead
+}
+
 /**
  * Setup Gameserver with the webserver and socket.io
  * @param server gameserver instance to setup
@@ -61,11 +62,11 @@ function setupGameServer(server) {
     //Connect them to a game lobby
     server.findGame(client);
 
-    client.on('message', function (message) { //Forward messages to game server
+    //Forward messages and disconnection to gameServer handler
+    client.on('message', function (message) {
       server.onMessage(client, message);
     });
-
-    client.on('disconnect', function () { //Forward disconnects to Server
+    client.on('disconnect', function () {
       debug(client.userID + ' disconnected');
       server.onDisconnect(client);
     });
@@ -73,23 +74,10 @@ function setupGameServer(server) {
 }
 
 /**
- * Setup Socket.IO Listener
- */
-
-function setupSocketIO(sio) {
-  sio.set('heartbeat interval', 1000); //1 sec interval to check if clients are alive
-  sio.set('heartbeat timeout', 5000); //5 sec timeout to drop dead clients if they are still dead
-
-  sio.set('authorization', function (handshakeData, callback) {
-    // make sure the handshake data looks good
-    callback(null, true); // error first, 'authorized' boolean second
-  });
-}
-
-/**
  * Normalize a port into a number, string, or false.
+ * @param {number} val value to normalize
+ * @return {string|number|boolean} value if it isn't a number, integer if its a valid port and false if not.
  */
-
 function normalizePort(val) {
   var port = parseInt(val, 10);
 
@@ -108,8 +96,8 @@ function normalizePort(val) {
 
 /**
  * Event listener for HTTP server "error" event.
+ * HTTP Errors
  */
-
 function onError(error) {
   if (error.syscall !== 'listen') {
     throw error;

@@ -137,38 +137,6 @@ gameServer.endGame = function (gameID, userID) {
     error('Client: ' + userID + ' tried ending Game: ' + gameID + ' that does not exist!');
   }
 };
-
-/**
- * Handle client disconnection
- * @param client client which disconnected
- */
-gameServer.onDisconnect = function (client) {
-  if (this.fakeLag) {
-    setTimeout(function () { //Disconnect delayed
-      gameServer._onDisconnect(client);
-    }.bind(this), this.fakeLag);
-  } else {
-    this._onDisconnect(client);
-  }
-};
-gameServer._onDisconnect = function (client) {
-  if (client.game && client.game.id) { //If the client was in a game, remove them from that game's instance and notify all other players in that game
-    delete client.game.players[client.userID];
-    client.game.playerCount--;
-    client.game.gameCore.removePlayer(client);
-
-    for (var player in client.game.players) {
-      if (client.game.players.hasOwnProperty(player)) {
-        client.game.players[player].send('s.pl.d.' + client.userID);
-      }
-    }
-
-    if (client.game.playerCount <= 0) {
-      this.endGame(client.game.id, client.userID);
-      debug('Ended game ' + client.game.id);
-    }
-  }
-};
 /**
  * Find a game for given player
  * @param player player to find a slot for
@@ -207,6 +175,37 @@ gameServer.joinGame = function (gameInstance, playerSocket) {
   for (var player in gameInstance.players) {
     if (gameInstance.players.hasOwnProperty(player) && playerSocket.userID !== player) {
       gameInstance.players[player].send('s.pl.j.' + playerSocket.userID + '.' + gameInstance.gameCore.players[playerSocket.userID].color); //Server Player is Joining with [playerID]
+    }
+  }
+};
+/**
+ * Handle client disconnection
+ * @param client client which disconnected
+ */
+gameServer.onDisconnect = function (client) {
+  if (this.fakeLag) {
+    setTimeout(function () { //Disconnect delayed
+      gameServer._onDisconnect(client);
+    }.bind(this), this.fakeLag);
+  } else {
+    this._onDisconnect(client);
+  }
+};
+gameServer._onDisconnect = function (client) {
+  if (client.game && client.game.id) { //If the client was in a game, remove them from that game's instance and notify all other players in that game
+    delete client.game.players[client.userID];
+    client.game.playerCount--;
+    client.game.gameCore.removePlayer(client);
+
+    for (var player in client.game.players) {
+      if (client.game.players.hasOwnProperty(player)) {
+        client.game.players[player].send('s.pl.d.' + client.userID);
+      }
+    }
+
+    if (client.game.playerCount <= 0) {
+      this.endGame(client.game.id, client.userID);
+      debug('Ended game ' + client.game.id);
     }
   }
 };

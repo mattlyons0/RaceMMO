@@ -1,7 +1,7 @@
 <ul>
     <h2>Bugs</h2>
     <ul>
-        <li>serverCore is inside game.js for some reason (browserify client/server issue?)</li>
+        <li>No known bugs</li>
     </ul>
 
     <h2>Features</h2>
@@ -10,14 +10,7 @@
 
         <h3>Short Term</h3>
 
-        <li>Organize functions</li>
-        <ul>
-            <li>This means putting functions in an order that makes sense, or splitting into seperate files</li>
-            <li>Cleanup clientCore</li>
-            <li>Cleanup serverCore</li>
-            <li>Cleanup gamePlayer</li>
-            <li>Organize www.js</li>
-        </ul>
+        <li>Stop sending positions every update to every client</li>
         <li>Create composition based system for states <a href="https://medium.com/humans-create-software/composition-over-inheritance-cb6f88070205">(ex1)</a> <a href="http://vasir.net/blog/game-development/how-to-build-entity-component-system-in-javascript">(ex2)</a></li>
 
         <h3>Long Term</h3>
@@ -31,7 +24,6 @@
         <li>Adaptive 'clientSmooth' based on latency</li>
         <li>Test Express Server</li>
         <li>Assets: <a href="https://www.reddit.com/r/gamedev/comments/3cjgun/spritestiles_to_create_a_topdown_racing_game/">link</a></li>
-        <li>Stop sending state updates every millisecond</li>
         <li><a href="https://coderwall.com/p/5cv5lg/generate-your-changelogs-with-git-log">Auto Generate Changelogs from git</a>
             after <a href="http://stackoverflow.com/questions/16864259/how-to-run-bash-script-after-git-push">each commit</a></li>
         <li><a href="http://www.gamasutra.com/blogs/GustavoMaciel/20131229/207833/Generating_Procedural_Racetracks.php">Procedural Racetracks</a></li>
@@ -73,8 +65,9 @@
         <li>Test <a href="https://ci.testling.com/">cross-browser compatability</a></li>
         <li>Figure out what to do with tests... They all work individually, but when running together in mocha they fail. <a href="http://fredkschott.com/post/2014/05/nodejs-testing-essentials/">(Get more tools)</a>
             <a href="https://github.com/socketio/socket.io/blob/master/test/socket.io.js">Look at how socket.io does testing</a></li>
+        <li>Add favicon</li>
 
-        <h3>Possible Additions (if needed)</h3>
+        <h3>Possible Additions</h3>
 
 
         <li>Multiple <a href="http://socket.io/docs/using-multiple-nodes/">SocketIO Nodes</a></li>
@@ -92,5 +85,6 @@
         <li>More optimization <a href="http://blog.caustik.com/category/node-js/">1M Concurrent connections!</a></li>
         <li>Check <a href="https://blog.codecentric.de/en/2014/02/cross-platform-javascript/">cross platform javascript guide</a></li>
         <li>Automatically detect desync (when server keeps overriding current client every update)</li>
+        <li>Give servers friendly names</li>
     </ul>
 </ul>
