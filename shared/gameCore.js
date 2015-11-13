@@ -66,7 +66,6 @@ var GameCore = function (gameInstance, clientFake) {
   } else
     require('../client/clientCore');
   if (this.inBrowser()) { //Keyboard will crash if we arent in the browser
-    debug('Init Keyboard')
     var keyboardHandler = require('../client/lib/keyboard');
     this.keyboard = new keyboardHandler.KeyboardState(); //Keyboard Handler
   }
@@ -275,6 +274,8 @@ GameCore.prototype.removePlayer = function (playerInstance) {
  */
 GameCore.prototype.createTimer = function () {
   setInterval(function () {
+    if (this.freezeLogic)
+      return; //Don't update time if we are frozen
     this._dt = new Date().getTime() - this._dte; //Time spent last delta frame
     this._dte = new Date().getTime();
     this.localTime += this._dt / 1000.0;

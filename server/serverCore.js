@@ -6,7 +6,7 @@
 
 require('../shared/gameCore');
 
-var debug=require('debug')('RaceMMO:ServerCore');
+var debug = require('debug')('RaceMMO:ServerCore');
 var diff = require('deep-diff').diff;
 var hash = require('object-hash');
 var deepcopy = require('deepcopy');

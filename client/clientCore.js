@@ -171,14 +171,14 @@ GameCore.prototype.clientProcessNetUpdates = function () {
     }
     //Called if we aren't predicting client movement, update position of current client from server
     if (!this.clientPredict && !this.naiveApproach) {
-      var myServerPos = latestServerData.pl[this.socket.userID].state.pos;
+      var myServerPos = latestServerData.pl[this.socket.userID].pos;
       var myTarget = target.pl[this.socket.userID];
       //Why would we not exist in the future?
       var myPast = previous.pl[this.socket.userID];
       var myTargetPos, myPastPos;
       if (myTarget && myPast) {
-        myTargetPos = myTarget.state.pos;
-        myPastPos = myPast.state.pos;
+        myTargetPos = myTarget.pos;
+        myPastPos = myPast.pos;
       } else { //We didn't exist in the past or in the future (because of a disconnect/reconnect)
         myTargetPos = myServerPos;
         myPastPos = myServerPos;
@@ -248,6 +248,8 @@ GameCore.prototype.clientUpdateLocalPosition = function () {
  * Calculate Physics clientside
  */
 GameCore.prototype.clientUpdatePhysics = function () {
+  if(this.freezeLogic)
+    return; //Don't do anything if logic is frozen
   this.clientHandleInput();
   this.clientUpdateLocalPosition();
 
@@ -265,6 +267,9 @@ GameCore.prototype.clientUpdatePhysics = function () {
  *  Draw, Input, Physics
  */
 GameCore.prototype.clientUpdate = function () {
+  if (this.freezeLogic)
+    return; //Do nothing if we are freezing logic
+
   if (!this.fakeClient) {
     this.ctx.clearRect(0, 0, 720, 480);
     this.clientDrawInfo();
@@ -315,6 +320,7 @@ GameCore.prototype.clientCreatePingTimer = function () {
  */
 GameCore.prototype.clientCreateConfiguration = function () {
   this.showHelp = false; //Help Text
+  this.freezeLogic = false; //Freeze update timers
   this.naiveApproach = false; //Naive Approach being poor netcode
   this.showServerPos = false;
   this.showDestPos = false; //Show Interpolation Goal
@@ -374,6 +380,7 @@ GameCore.prototype.clientCreateDebugGui = function () {
   _debugSettings.add(this, 'showServerPos').listen();
   _debugSettings.add(this, 'showDestPos').listen();
   _debugSettings.add(this, 'localTime').listen();
+  _debugSettings.add(this, 'freezeLogic').listen();
   _debugSettings.open();
 
   var _conSettings = this.gui.addFolder('connection');
