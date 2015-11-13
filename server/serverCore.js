@@ -4,7 +4,6 @@
  Functions specifically for serverSide only
  */
 
-var GamePlayer = require('../shared/gamePlayer');
 require('../shared/gameCore');
 
 var diff = require('deep-diff').diff;

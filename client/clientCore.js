@@ -1,12 +1,9 @@
+'use strict';
 /*
  CLIENTSIDE FUNCTIONS
  Functions for clientside only
  */
-GameCore = require('../shared/gameCore');
-if (typeof window !== 'undefined') //We are in the browser
-  var dat = require('../client/lib/dat.gui');
-if ('undefined' === typeof (GamePlayer)) //If this hasn't been loaded serverside (unit testing)
-  GamePlayer = require('../shared/gamePlayer');
+var dat = require('../client/lib/dat.gui');
 
 /**
  * Handle input clientside
@@ -398,8 +395,6 @@ GameCore.prototype.clientOnJoinGame = function (gameID, gameTime) {
   var selfState = this.players[this.socket.userID].state;
   selfState.infoColor = '#00bb00';
 
-  //TODO request full state from server
-
   this.instance = {id: gameID};
 
   var serverTime = parseFloat(gameTime.replace('-', '.'));
@@ -555,6 +550,7 @@ GameCore.prototype.clientParseStateDump = function (stateDump) {
 };
 /**
  * Handle Connecting to the server
+ * Only called in the constructor of GameCore
  */
 GameCore.prototype.clientConnectToServer = function () {
   if (this.fakeClient)
@@ -612,4 +608,3 @@ GameCore.prototype.clientDrawServer = function () {
   this.ctx.fillStyle = 'rgba(255,255,255,1)'; //Reset Fillstyle
 };
 
-module.exports = GameCore;

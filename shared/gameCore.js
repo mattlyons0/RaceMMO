@@ -6,18 +6,10 @@
  * Contains Core Game Logic
  *    Since simulation is run on both client and server, it makes sense to share some functions
  */
-if (typeof window !== 'undefined') { //We are in the browser
-  var keyboardHandler = require('../client/lib/keyboard');
-}
-var fakeClient = false; //Will be set to true if we are faking being a client on the server for tests
-var onServer = function () {
-  if (!fakeClient && 'undefined' !== typeof (global)) //Check if we are on the server and are not pretending to be a client
-    return true;
-  return false;
-};
 
 /**
  * Main update loop runs on requestAnimationFrame, which will fallback to a setTimout loop on the server
+ * @param window object to add/find requestAnimationFrame
  */
 var setupTiming = function (window) {
   var lastTime = 0;
@@ -62,21 +54,25 @@ var GameCore = function (gameInstance, clientFake) {
   /** @constant */
   GameCore.frameTime = 60 / 1000; //Run client game logic at 60hz
 
-  if ('undefined' === typeof (mathUtils)) { //If we are on the server, reference functions
-    GameCore.mathUtils = require('./utils/mathUtils');
-    require('../server/serverCore'); //Supplies gamePlayer as well
-  } else { //If we are on the client, simply put functions inside GameCore
-    GameCore.mathUtils = mathUtils;
-  }
-
-  if (clientFake === true) this.fakeClient = true;
-  else this.fakeClient = false;
-
-  if (onServer()) GameCore.frameTime = 45; //Run at 22hz on server
-  setupTiming(typeof window === 'undefined' ? global : window); //Create timing mechanism that works both serverside and clientside
-
   this.instance = gameInstance;
   this.server = this.instance !== undefined; //Store if we are the server
+  this.fakeClient = clientFake;
+
+  GameCore.mathUtils = require('./utils/mathUtils');
+
+  if (this.server) {
+    require('../server/serverCore'); //Supplies gamePlayer as well
+    GameCore.frameTime = 45; //Run at 22hz on server
+  } else
+    require('../client/clientCore');
+  if (this.inBrowser()) { //Keyboard will crash if we arent in the browser
+    var keyboardHandler = require('../client/lib/keyboard');
+    this.keyboard = new keyboardHandler.KeyboardState(); //Keyboard Handler
+  }
+
+  setupTiming(typeof window === 'undefined' ? global : window); //Create timing mechanism that works both serverside and clientside
+  //This way we can use requestAnimationFrame on both sides
+
   this.world = {width: 720, height: 480};
 
   //Create player set and tell them the game is running
@@ -120,9 +116,6 @@ var GameCore = function (gameInstance, clientFake) {
 
   //ClientSide Only Init
   if (!this.server) {
-    if (!this.fakeClient)
-      this.keyboard = new keyboardHandler.KeyboardState(); //Keyboard Handler
-
     this.clientCreateConfiguration(); //Create Default Settings for client
     this.serverUpdates = []; //List of recent server updates so we can interpolate
     this.clientConnectToServer(); //Connect to the socket.io server
@@ -297,5 +290,13 @@ GameCore.prototype.createPhysicsSimulation = function () {
     this.updatePhysics();
   }.bind(this), GameCore.PHYSICS_UPDATE_TIME);
 };
+/**
+ * Determines if we are in a browser or not
+ * @returns {boolean} true if we are in a browser
+ */
+GameCore.prototype.inBrowser = function () {
+  return (typeof window === 'undefined');
+};
 
-module.exports = global.GameCore = GameCore; //Required to be able to extend GameCore in other classes
+global.GamePlayer = require('./gamePlayer'); //GamePlayer access for serverCore/clientCore
+module.exports = global.GameCore = GameCore; //Global required to be able to extend GameCore in other classes (serverCore/clientCore)

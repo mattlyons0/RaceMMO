@@ -65,5 +65,4 @@ GamePlayer.prototype.draw = function () {
   this.game.ctx.fillText(this.state.label, this.state.pos.x + 10, this.state.pos.y + 4);
 };
 
-if ('undefined' !== typeof (global)) //If we are serverside export functions
-  module.exports = GamePlayer;
+module.exports = GamePlayer;
