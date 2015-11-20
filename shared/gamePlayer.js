@@ -31,7 +31,7 @@ var GamePlayer = function (gameInstance, playerInstance) {
     this.state.label = 'connected';
   }
 
-  this.oldState = {hash: '0', state: {}}; //OldState only contains a hash of the current state, and a duplicate of the state from a update ago
+  this.oldState = {}; //OldState only contains a duplicate of the state from a update ago
 
   //World bounds
   this.state.posLimits = { //TODO consider moving this out of state

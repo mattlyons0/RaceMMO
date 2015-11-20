@@ -58,7 +58,8 @@
         <li>Optimization</li>
         <ul>
             <li>Move away from UUIDs and just use manual indexing (while filling lower unused values)</li>
-            <li>Use enums for event names instead of long strings</li>
+            <li>Change from associated array to an array for players list</li>
+            <li>Use enums (corresponding to numbers) for event names instead of long strings</li>
         </ul>
         <li>Make stable branch which the production server will automatically pull from <a href="https://bocoup.com/weblog/node-stress-test-server">(ex)</a></li>
         <li>adhere to <a href="https://github.com/LearnBoost/Socket.IO/wiki/Configuring-Socket.IO">advised socket.io settings</a></li>
@@ -66,6 +67,7 @@
         <li>Figure out what to do with tests... They all work individually, but when running together in mocha they fail. <a href="http://fredkschott.com/post/2014/05/nodejs-testing-essentials/">(Get more tools)</a>
             <a href="https://github.com/socketio/socket.io/blob/master/test/socket.io.js">Look at how socket.io does testing</a></li>
         <li>Add favicon</li>
+        <li>Use <a href="https://travis-ci.org">Travis</a></li>
 
         <h3>Possible Additions</h3>
 

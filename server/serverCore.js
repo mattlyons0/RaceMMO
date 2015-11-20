@@ -88,47 +88,36 @@ GameCore.prototype.serverUpdatePhysics = function () {
 };
 /**
  * Check what has changed in the state and respond accordingly
+ * Takes about 0.250ms on average
+ * Hashing each state doesn't make sense because each hash takes from .5-2ms and that doesn't make sense per player
  */
 GameCore.prototype.updateState = function () {
-  var keysChanged = [];
-  //Determine which players changed and assign new hash
-  for (let key in this.players) {
-    if (this.players.hasOwnProperty(key)) {
-      var player = this.players[key];
-      var stateHash = hash.sha1(player.state); //TODO check how long this takes
-      if (player.oldState.hash !== stateHash) { //This players state has changed
-        keysChanged.push(key);
-        player.oldState.hash = stateHash;
-      }
-    }
-  }
   //Determine what changed and handle changes
-  for (var x = 0; x < keysChanged.length; x++) {
-    var playerChanged = this.players[keysChanged[x]];
-    var changes = diff(playerChanged.oldState.state, playerChanged.state); //TODO check how long this takes
-
-    //Handle Changes
-    for (var index = 0; index < changes.length; index++) {
-      var change = changes[index];
-      switch (change.path[0]) {
-        case 'color':
-          for (let key in this.players) { //Send all clients that a client changed color
-            if (this.players.hasOwnProperty(key) && key != keysChanged[x]) {
-              this.players[key].instance.send('s.pl.c.' + change.rhs + '.' + keysChanged[x]); //Send which client changed to which color
+  for (var playerID in this.players) {
+    if (this.players.hasOwnProperty(playerID)) {
+      var player = this.players[playerID];
+      var changes = diff(player.oldState, player.state); //Takes 2-0.01ms (but much faster than hashing)
+      if (!changes)
+        changes = [];
+      //Handle Changes
+      for (var index = 0; index < changes.length; index++) {
+        var change = changes[index];
+        switch (change.path[0]) {
+          case 'color':
+            for (const key in this.players) { //Send all clients that a client changed color
+              if (this.players.hasOwnProperty(key) && key !== playerID) {
+                this.players[key].instance.send('s.pl.c.' + change.rhs + '.' + playerID); //Send which client changed to which color
+              }
             }
-          }
-          break;
+            break;
 
-        default:
-          console.warn('Unhandled change at ' + change.path[0]);
+          default:
+            console.warn('Unhandled change at ' + change.path[0]);
+        }
       }
-    }
-  }
-  //Save state as old state
-  for (var key1 in this.players) {
-    if (this.players.hasOwnProperty(key1)) {
-      var player1 = this.players[key1];
-      player1.oldState.state = deepcopy(player1.state);  //Copy entire state (by memory, not reference)
+
+      //Copy currentState to oldState
+      player.oldState = deepcopy(player.state);  //Copy entire state (by memory, not reference)
     }
   }
 };
