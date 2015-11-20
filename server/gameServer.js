@@ -170,7 +170,8 @@ gameServer.joinGame = function (gameInstance, playerSocket) {
   playerSocket.game = gameInstance;
 
   //Give client the state of all the other players
-  gameInstance.gameCore.dumpStateToClient(gameInstance.players[playerSocket.userID]);
+  gameInstance.gameCore.dumpStateToClient(gameInstance.players[playerSocket.userID]); //Send all clients attributes
+  gameInstance.gameCore.dumpPhysicsToClient(gameInstance.players[playerSocket.userID]); //Send all clients positions
   //Tell all clients in that game this player is joining
   for (var player in gameInstance.players) {
     if (gameInstance.players.hasOwnProperty(player) && playerSocket.userID !== player) {

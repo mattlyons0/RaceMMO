@@ -117,6 +117,7 @@ var GameCore = function (gameInstance, clientFake) {
   if (!this.server) {
     this.clientCreateConfiguration(); //Create Default Settings for client
     this.serverUpdates = []; //List of recent server updates so we can interpolate
+    this.latestServerData = []; //Array of players and their most recent data given from server
     this.clientConnectToServer(); //Connect to the socket.io server
     this.clientCreatePingTimer(); //Start pinging server and determine latency
     this.clientChangeColor(); //Grab color
@@ -127,7 +128,8 @@ var GameCore = function (gameInstance, clientFake) {
     }
   } else { //If we are running this serverside
     this.serverTime = 0;
-    this.lastState = {};
+    this.lastState = {pl: []};
+    this.oldInputSeq = {}; //Input Seq for each player from last server update (used to determine which players need to be sent in state)
   }
 }; //GameCore constructor
 

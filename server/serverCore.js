@@ -35,34 +35,66 @@ GameCore.prototype.serverRemovePlayer = function (player) {
  */
 GameCore.prototype.serverUpdate = function () {
   this.serverTime = this.localTime; //Update our clock to match timer
-  //if (this.lastState.his === this.players.self.lastInputSeq && this.lastState.cis === this.players.other.lastInputSeq) {
-  //  return; //Disables sending same state multiple times, but also causes state match bugs, so I'll comment it until its needed
-  //}
-  //TODO send unique hash with each serverupdate so we don't have to iterate through every player to check if a update has changed or not
 
-  //Collect update into snapshot update
-  var playersData = [];
-  var num = 0;
-  for (var key in this.players) {
-    if (this.players.hasOwnProperty(key)) {
-      var player = this.players[key];
-      playersData[num] = {id: key, pos: player.physicsState.pos, is: player.physicsState.lastInputSeq};
-      num++;
+  //Determine which players have changed since the last serverUpdate
+  const changedIDs = [];
+
+  for (const id in this.players) {
+    if (this.players.hasOwnProperty(id)) {
+      if (this.oldInputSeq[id] !== this.players[id].physicsState.lastInputSeq) {
+        changedIDs.push(id);
+        this.oldInputSeq[id] = this.players[id].physicsState.lastInputSeq;
+      }
     }
   }
-  this.lastState = { //Snapshot current state for updating clients
-    pl: playersData,
-    t: this.serverTime //Time local to server
-  };
 
+  this.lastState = this.generateServerUpdate(changedIDs);
+
+  debug(this.lastState);
   //Send data updates to all clients
-  for (var key1 in this.players) {
-    if (this.players.hasOwnProperty(key1)) {
-      var player1 = this.players[key1];
-      player1.instance.emit('onserverupdate', this.lastState);
+  for (const key in this.players) {
+    if (this.players.hasOwnProperty(key)) {
+      const player = this.players[key];
+      player.instance.emit('onserverupdate', this.lastState);
     }
   }
   this.updateState();
+};
+/**
+ * Generate update object
+ * @param playerIDs array of IDs of players to include in update
+ * @returns {{pl: Array, t: (number|*)}} Object to send client as serverupdate
+ */
+GameCore.prototype.generateServerUpdate = function (playerIDs) {
+  //Collect update into snapshot update
+  const playersData = [];
+  for (let index = 0; index < playerIDs.length; index++) {
+    const player = this.players[playerIDs[index]];
+    playersData[index] = {
+      id: playerIDs[index],
+      pos: player.physicsState.pos,
+      is: player.physicsState.lastInputSeq
+    };
+  }
+  return { //Snapshot current state for given IDs
+    pl: playersData,
+    t: this.serverTime.toFixed(2) //Time local to server, limited to 2 decimal places
+  };
+};
+/**
+ * Send all player physics to given client
+ * Only called upon connection
+ * @param player player object to send to
+ */
+GameCore.prototype.dumpPhysicsToClient = function (player) {
+  const allPlayers = [];
+  for (const id in this.players) {
+    if (this.players.hasOwnProperty(id)) {
+      allPlayers.push(id);
+    }
+  }
+  debug(this.generateServerUpdate(allPlayers));
+  this.players[player.userID].instance.emit('onserverupdate', this.generateServerUpdate(allPlayers));
 };
 /**
  * Updated every 15ms, simulates world state

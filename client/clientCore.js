@@ -43,8 +43,8 @@ GameCore.prototype.clientCreateConfiguration = function () {
 };
 
 /******************
-   Player Logic
-*****************/
+ Player Logic
+ *****************/
 
 /**
  * Create player on client
@@ -238,8 +238,8 @@ GameCore.prototype.clientDrawServer = function () {
 };
 
 /*************
-  NETWORKING
-************/
+ NETWORKING
+ ************/
 //Roughly organized in order of connection lifecycle
 
 /**
@@ -361,7 +361,7 @@ GameCore.prototype.clientOnServerUpdateReceived = function (data) {
   this.serverTime = data.t; //Server time (can be used to calc latency)
   this.clientTime = this.serverTime - (this.netOffset / 1000); //Latency Offset
 
-  var pl = []; //Process data (can't send associative array over socketIO, so I number it then restore it here
+  var pl = []; //Process data (can't send associative array over socketIO, so I number it then restore it here)
   for (var x = 0; x < data.pl.length; x++) {
     pl[data.pl[x].id] = {pos: data.pl[x].pos, is: data.pl[x].is};
     if (!this.players[data.pl[x].id]) { //New player since last update
@@ -380,6 +380,9 @@ GameCore.prototype.clientOnServerUpdateReceived = function (data) {
   } else { //Lerp Approach
     //Cache data from server, play it back with the netOffset and interpolate between points
     this.serverUpdates.push({pl: pl, t: data.t}); //Add the formatted packet to the array
+    for (let index = 0; index < data.pl.length; index++) {
+      this.latestServerData[data.pl[index].id] = {pos: data.pl[index].pos, is: data.pl[index].is};
+    }
 
     //Limit buffer in seconds of updates 60fps*bufferSeconds=samples
     if (this.serverUpdates.length >= (60 * this.bufferSize)) {
@@ -513,8 +516,7 @@ GameCore.prototype.clientProcessNetPredictionCorrection = function () {
   //NOTE: this.serverUpdates.pl is the associative array with the key as player id's
   if (!this.serverUpdates.length) return; //Nothing to do if there are no updates
 
-  var latestServerData = this.serverUpdates[this.serverUpdates.length - 1];
-  var myData = latestServerData.pl[this.socket.userID];
+  var myData = this.latestServerData[this.socket.userID];
   var myServerPos = myData.pos; //Get the client position
   this.ghosts.serverPosSelf.physicsState.pos = GameCore.mathUtils.pos(myServerPos); //Update Ghost with real position
 
@@ -588,14 +590,13 @@ GameCore.prototype.clientProcessNetUpdates = function () {
     if (timePoint === Infinity)timePoint = 0;
 
     //Movement Math
-    var latestServerData = this.serverUpdates[this.serverUpdates.length - 1]; //Most Recent Server Update
     for (var id in this.players) {
       if (this.players.hasOwnProperty(id) && id !== this.socket.userID) { //Process everyone other than current client
-        if (!latestServerData.pl[id]) { //We don't exist in the server update, maybe because we recently disconnected and reconnected
+        if (!this.latestServerData[id]) { //We don't exist in the server update, maybe because we recently disconnected and reconnected
           console.warn('Player not in server update!');
           continue;
         }
-        var otherServerPos = latestServerData.pl[id].pos; //The exact server positions, used for the ghost
+        var otherServerPos = this.latestServerData[id].pos; //The exact server positions, used for the ghost
         var otherTargetPos = target.pl[id] ? target.pl[id].pos : undefined; //If player exists in these server states, use their position. If not undefined will be correctly handled below
         var otherPastPos = previous.pl[id] ? previous.pl[id].pos : undefined;
 
@@ -617,7 +618,7 @@ GameCore.prototype.clientProcessNetUpdates = function () {
     }
     //Called if we aren't predicting client movement, update position of current client from server
     if (!this.clientPredict && !this.naiveApproach) {
-      var myServerPos = latestServerData.pl[this.socket.userID].pos;
+      var myServerPos = this.latestServerData.pl[this.socket.userID].pos;
       var myTarget = target.pl[this.socket.userID];
       //Why would we not exist in the future?
       var myPast = previous.pl[this.socket.userID];
