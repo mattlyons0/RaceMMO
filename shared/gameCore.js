@@ -128,7 +128,6 @@ var GameCore = function (gameInstance, clientFake) {
     }
   } else { //If we are running this serverside
     this.serverTime = 0;
-    this.lastState = {pl: []};
     this.oldInputSeq = {}; //Input Seq for each player from last server update (used to determine which players need to be sent in state)
   }
 }; //GameCore constructor

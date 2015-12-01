@@ -27,10 +27,9 @@ GameCore.prototype.clientCreateConfiguration = function () {
   this.netOffset = 100; //100ms latency between server and client interpolation for other clients
   this.bufferSize = 2; //The size of the server history to keep for interpolation
   this.targetTime = 0.01; //Time we want to be in the server timeline
-  this.oldestTick = 0.01; //Last time tick we have in the buffer
 
   this.clientTime = 0.01; //Client's clock
-  this.serverTime = 0.01; //Time reported from server
+  this.serverTime = 0.001; //Time reported from server
 
   this.dt = 0.016; //Time the last frame took
   this.fps = 0; //1/this.dt
@@ -361,6 +360,7 @@ GameCore.prototype.clientOnServerUpdateReceived = function (data) {
   this.serverTime = data.t; //Server time (can be used to calc latency)
   this.clientTime = this.serverTime - (this.netOffset / 1000); //Latency Offset
 
+  //debug('clientTime off by '+(this.serverTime - this.clientTime));
   var pl = []; //Process data (can't send associative array over socketIO, so I number it then restore it here)
   for (var x = 0; x < data.pl.length; x++) {
     pl[data.pl[x].id] = {pos: data.pl[x].pos, is: data.pl[x].is};
@@ -372,24 +372,22 @@ GameCore.prototype.clientOnServerUpdateReceived = function (data) {
     this.players[this.socket.userID].physicsState.currentState.pos = GameCore.mathUtils.pos(pl[this.socket.userID].pos);
   }
   if (this.naiveApproach) {
-    for (var key in this.players) {
-      if (this.players.hasOwnProperty(key)) {
+    for (var key in pl) {
+      if (pl.hasOwnProperty(key)) {
         this.players[key].physicsState.pos = GameCore.mathUtils.pos(pl[key].pos);
       }
     }
   } else { //Lerp Approach
     //Cache data from server, play it back with the netOffset and interpolate between points
-    this.serverUpdates.push({pl: pl, t: data.t}); //Add the formatted packet to the array
+    this.serverUpdates.push({pl: pl, t: data.t}); //Add the formatted packet to the end of the array
     for (let index = 0; index < data.pl.length; index++) {
-      this.latestServerData[data.pl[index].id] = {pos: data.pl[index].pos, is: data.pl[index].is};
+      this.latestServerData[data.pl[index].id] = {pos: data.pl[index].pos, is: data.pl[index].is, t: data.t};
     }
 
     //Limit buffer in seconds of updates 60fps*bufferSeconds=samples
     if (this.serverUpdates.length >= (60 * this.bufferSize)) {
-      this.serverUpdates.splice(0, 1);
+      this.serverUpdates.splice(0, 1); //Remove index 0
     }
-    this.oldestTick = this.serverUpdates[0].t; //If the client gets behind this due to latency, we snap them to the latest tick (only if connection is really bad)
-    //TODO figure out if oldestTick is needed
     this.clientProcessNetPredictionCorrection();
   }
 };
@@ -526,6 +524,7 @@ GameCore.prototype.clientProcessNetPredictionCorrection = function () {
     var lastInputSeqIndex = -1; //Last input sequence from my input
     //Find input on server
     for (var i = 0; i < this.players[this.socket.userID].physicsState.inputs.length; ++i) {
+      //noinspection Eslint (Double equals is needed, not triple)
       if (this.players[this.socket.userID].physicsState.inputs[i].seq == myLastInputOnServer) {
         lastInputSeqIndex = i;
         break;
@@ -551,7 +550,7 @@ GameCore.prototype.clientProcessNetUpdates = function () {
   if (!this.serverUpdates.length) return; //Nothing to do if there are no updates
 
   //Find the position in the timeline of the updates we store
-  var currentTime = this.clientTime;
+  var currentTime = this.localTime;
   var count = this.serverUpdates.length - 1;
   var target = null;
   var previous = null;
@@ -565,14 +564,13 @@ GameCore.prototype.clientProcessNetUpdates = function () {
       //We found the most recent server update that we haven't processed yet
       target = nextPoint;
       previous = point;
+      //debug(point.t+' '+currentTime+' '+nextPoint.t);
       break;
     }
   }
-  if (!target) { //use last known server pos and move to it
-    target = this.serverUpdates[0];
-    previous = this.serverUpdates[0];
-    if (this.serverUpdates.length > 2)
-      console.warn('Could not find last server update!'); //If this happens something weird is going on
+  if (!target) { //Can occur because there wasn't a state change recently. Use last known server pos and move to it
+    target = this.serverUpdates[this.serverUpdates.length-1];
+    previous = this.serverUpdates[this.serverUpdates.length-1];
   }
 
   //Interpolate between target and previous destination
@@ -592,7 +590,7 @@ GameCore.prototype.clientProcessNetUpdates = function () {
     //Movement Math
     for (var id in this.players) {
       if (this.players.hasOwnProperty(id) && id !== this.socket.userID) { //Process everyone other than current client
-        if (!this.latestServerData[id]) { //We don't exist in the server update, maybe because we recently disconnected and reconnected
+        if (!this.latestServerData[id]) { //We don't exist in the server update, probably never notified player we joined
           console.warn('Player not in server update!');
           continue;
         }

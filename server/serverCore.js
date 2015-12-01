@@ -7,7 +7,6 @@ require('../shared/gameCore');
 
 var debug = require('debug')('RaceMMO:ServerCore');
 var diff = require('deep-diff').diff; //For diffing objects
-var hash = require('object-hash'); //For hashing objects
 var deepcopy = require('deepcopy'); //For copying objects
 
 /**
@@ -48,14 +47,15 @@ GameCore.prototype.serverUpdate = function () {
     }
   }
 
-  this.lastState = this.generateServerUpdate(changedIDs);
+  if (changedIDs.length !== 0) { //Only send serverupdate if a player's position has changed
+    const updatePacket = this.generateServerUpdate(changedIDs);
 
-  debug(this.lastState);
-  //Send data updates to all clients
-  for (const key in this.players) {
-    if (this.players.hasOwnProperty(key)) {
-      const player = this.players[key];
-      player.instance.emit('onserverupdate', this.lastState);
+    //Send data updates to all clients
+    for (const key in this.players) {
+      if (this.players.hasOwnProperty(key)) {
+        const player = this.players[key];
+        player.instance.emit('onserverupdate', updatePacket);
+      }
     }
   }
   this.updateState();
@@ -78,7 +78,7 @@ GameCore.prototype.generateServerUpdate = function (playerIDs) {
   }
   return { //Snapshot current state for given IDs
     pl: playersData,
-    t: this.serverTime.toFixed(2) //Time local to server, limited to 2 decimal places
+    t: this.serverTime.toFixed(3) //Time local to server, limited to 3 decimal places
   };
 };
 /**
