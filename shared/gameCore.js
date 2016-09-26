@@ -142,6 +142,7 @@ GameCore.prototype.update = function (t) {
 
   if (!this.server) { //If we arent the server, update the client, otherwise update the server
     this.clientUpdate();
+    this.renderer.render(this.layers.stage); //Render pixi
   } else {
     this.serverUpdate();
   }

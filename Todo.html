@@ -10,16 +10,11 @@
 
         <h3>Short Term</h3>
 
-        <li>Create composition based system for states <a href="https://medium.com/humans-create-software/composition-over-inheritance-cb6f88070205">(ex1)</a> <a href="http://vasir.net/blog/game-development/how-to-build-entity-component-system-in-javascript">(ex2)</a></li>
-
         <h3>Long Term</h3>
 
 
-        <li>Migrate to Pixi.js</li>
-        <ul>
-            <li>Figure out location to put drawing code once migrated to PIXI</li>
-        </ul>
-        <li>Scale Canvas to browser size</li>
+        <li>Figure out location to put drawing code once migrated to PIXI</li>
+        <li>Scale Canvas to browser size <a href="http://www.rocketshipgames.com/blogs/tjkopena/2015/09/basic-scaling-animation-and-parallax-in-pixi-js-v3/">(ex)</a></li>
         <li>Adaptive 'clientSmooth' based on latency</li>
         <li>Test Express Server</li>
         <li>Assets: <a href="https://www.reddit.com/r/gamedev/comments/3cjgun/spritestiles_to_create_a_topdown_racing_game/">link</a></li>
@@ -68,7 +63,13 @@
         <li>Add favicon</li>
         <li>Use <a href="https://travis-ci.org">Travis</a></li>
         <li>Implement lag compenstation</li>
-        <li>Ensure overriding client works</li>
+        <ul>
+            <li>Dead Reckoning</li>
+        </ul>
+        <li>Ensure overriding client works (set serverupdates to a very low number and test how it works)</li>
+        <li>Ensure a latency of 500ms is decently handled</li>
+        <li>Create more states using composition system <a href="https://medium.com/humans-create-software/composition-over-inheritance-cb6f88070205">(ex1)</a> <a href="http://vasir.net/blog/game-development/how-to-build-entity-component-system-in-javascript">(ex2)</a></li>
+        <li>HTTP2 and SPDY support (fallback to http)</li>
 
         <h3>Possible Additions</h3>
 
@@ -90,5 +91,8 @@
         <li>Automatically detect desync (when server keeps overriding current client every update)</li>
         <li>Give servers friendly names</li>
         <li>Consider giving servers nsolid server stats pages if many servers are used</li>
+        <li><a href="https://www.nginx.com/blog/5-performance-tips-for-node-js-applications/">Performance Improvements to webserver/webproxy</a></li>
+        <li><a href="https://medium.com/@arnaudrinquin/build-modular-application-with-npm-local-modules-dfc5ff047bcc#.sd4hmpcmt">Make project modular using local modules</a></li>
+        <li><a href="https://bocoup.com/weblog/seams-in-javascript">Test Seams to see behavior on different computers (slower/faster)</a></li>
     </ul>
 </ul>

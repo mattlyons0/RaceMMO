@@ -212,17 +212,23 @@ GameCore.prototype.clientRefreshFPS = function () {
  * Draw help information if requested
  */
 GameCore.prototype.clientDrawInfo = function () {
-  this.ctx.fillStyle = 'rgba(255,255,255,0.3)';
   if (this.showHelp) {
-    this.ctx.fillText('netOffset : local offset between players and their server updates.', 10, 30);
-    this.ctx.fillText('serverTime : last known game time on server', 10, 70);
-    this.ctx.fillText('clientTime : delayed game time on client for other players only (includes the net_offset)', 10, 90);
-    this.ctx.fillText('netLatency : Time from you to the server. ', 10, 130);
-    this.ctx.fillText('netPing : Time from you to the server and back. ', 10, 150);
-    this.ctx.fillText('clientSmoothing/clientSmooth : When updating players information from the server, it can smooth them out.', 10, 210);
-    this.ctx.fillText(' This only applies to other clients when prediction is enabled, and applies to local player with no prediction.', 170, 230);
+    let helpText = 'netOffset : local offset between players and their server updates.\n';
+    helpText += 'serverTime : last known game time on server\n';
+    helpText += 'clientTime : delayed game time on client for other players only (includes the net_offset)\n';
+    helpText += 'netLatency : Time from you to the server.\n';
+    helpText += 'netPing : Time from you to the server and back.\n';
+    helpText += 'clientSmoothing/clientSmooth : When updating players information from the server, it can smooth them out.\n' +
+      'This only applies to other clients when prediction is enabled, and applies to local player with no prediction.';
+
+    let style = { fontFamily: 'Helvetica', fontSize: '12px', fill: 'grey'};
+    let helpLabel = new PIXI.Text(helpText,style);
+    helpLabel.x = 10;
+    helpLabel.y = 30;
+    helpLabel.wordWrap = true;
+
+    this.layers.gui.addChild(helpLabel);
   }
-  this.ctx.fillStyle = 'rgba(255,255,255,1)'; //Reset fillstyle
 };
 /**
  * Draw server ID at bottom of canvas
@@ -231,9 +237,11 @@ GameCore.prototype.clientDrawServer = function () {
   if (!this.instance) {
     return;
   }
-  this.ctx.fillStyle = 'rgba(255,255,255,0.5)';
-  this.ctx.fillText('Server: ' + this.instance.id, 0, this.world.height - 25);
-  this.ctx.fillStyle = 'rgba(255,255,255,1)'; //Reset Fillstyle
+  let style = { fontFamily: 'Helvetica', fontSize: '12px', fill: '#FFFFFF'};
+  let serverText = new PIXI.Text('Server: ' + this.instance.id,style);
+  serverText.x = 0;
+  serverText.y = this.world.height - 25;
+  this.layers.gui.addChild(serverText);
 };
 
 /*************
@@ -459,7 +467,8 @@ GameCore.prototype.clientUpdate = function () {
     return; //Do nothing if we are freezing logic
 
   if (!this.fakeClient) {
-    this.ctx.clearRect(0, 0, 720, 480);
+    this.layers.gui.removeChildren();
+    this.layers.field.removeChildren();
     this.clientDrawInfo();
     this.clientDrawServer();
   }

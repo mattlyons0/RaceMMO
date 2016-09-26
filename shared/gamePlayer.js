@@ -61,14 +61,23 @@ GamePlayer.prototype.draw = function () {
   //this.colorChanger.change();
 
   //Draw Player Rectangle
-  this.game.ctx.fillStyle = 'rgba(255,255,255,0.1)'; //Draw grey if online is false
-  if (this.state.online === true)
-    this.game.ctx.fillStyle = this.state.color;
-  this.game.ctx.fillRect(this.physicsState.pos.x - this.state.size.hx, this.physicsState.pos.y - this.state.size.hy, this.state.size.x, this.state.size.y);
+  let fill = '#808080'; //Draw grey if online is false
+  if (this.state.online === true && this.state.color !== undefined)
+    fill = this.state.color;
+
+  let graphics = new PIXI.Graphics();
+
+  graphics.beginFill(parseInt(fill.replace(/^#/, ''), 16)); //Convert hex string to hex number
+  graphics.drawRect(this.physicsState.pos.x - this.state.size.hx, this.physicsState.pos.y - this.state.size.hy, this.state.size.x, this.state.size.y);
+  this.game.layers.field.addChild(graphics);
   //Draw Player Status
   if (this.state.online === true)
-    this.game.ctx.fillStyle = this.state.infoColor;
-  this.game.ctx.fillText(this.state.label, this.physicsState.pos.x + 10, this.physicsState.pos.y + 4);
+    fill = this.state.infoColor;
+  let style = { fontFamily: 'Helvetica', fontSize: '12px', fill: fill};
+  let playerLabel = new PIXI.Text(this.state.label,style);
+  playerLabel.x = this.physicsState.pos.x + 10;
+  playerLabel.y = this.physicsState.pos.y + 4;
+  this.game.layers.field.addChild(playerLabel);
 };
 
 module.exports = GamePlayer;

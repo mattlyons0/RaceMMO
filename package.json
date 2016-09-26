@@ -5,8 +5,10 @@
   "author": "Matt Lyons <matt@matt-lyons.net>",
   "private": true,
   "scripts": {
-    "build": "node ./node_modules/browserify/bin/cmd.js client/gameClient.js -o public/javascripts/game.js -d",
-    "watch": "node ./node_modules/watchify/bin/cmd.js client/gameClient.js -o public/javascripts/game.js -dv",
+    "//": "Build browserify with sourcemaps without parsing pixi",
+    "build": "node ./node_modules/browserify/bin/cmd.js client/gameClient.js -o public/javascripts/game.js -d --noparse=$PWD/client/lib/pixi.js",
+    "//": "Watchify with sourcemaps without parsing pixi",
+    "watch": "node ./node_modules/watchify/bin/cmd.js client/gameClient.js -o public/javascripts/game.js -dv --noparse=$PWD/client/lib/pixi.js",
     "start": "node ./bin/www.js",
     "devRun": "sh ./devRun.sh",
     "test": "node ./node_modules/mocha/bin/mocha ./test",
