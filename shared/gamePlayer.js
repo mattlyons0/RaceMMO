@@ -75,8 +75,8 @@ GamePlayer.prototype.draw = function () {
     fill = this.state.infoColor;
   let style = { fontFamily: 'Helvetica', fontSize: '12px', fill: fill};
   let playerLabel = new PIXI.Text(this.state.label,style);
-  playerLabel.x = this.physicsState.pos.x + 10;
-  playerLabel.y = this.physicsState.pos.y + 4;
+  playerLabel.x = this.physicsState.pos.x - 10;
+  playerLabel.y = this.physicsState.pos.y + 10;
   this.game.layers.field.addChild(playerLabel);
 };
 

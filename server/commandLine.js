@@ -200,7 +200,7 @@ command.setupCommandLine = function (gameServer) {
     }
 
     function setupPopulateLoop(id, timer, updateTime) {
-      var core = gameServer.games[id].GameCore;
+      let core = gameServer.games[id].gameCore;
       if (!timer[id]) {
         timer[id] = [];
       }
@@ -213,7 +213,7 @@ command.setupCommandLine = function (gameServer) {
         else if (updateTime === GameCore.PHYSICS_UPDATE_TIME)
           timer[id].push(core.physicsUpdateTime);
         else if (updateTime === GameCore.frameTime)
-          timer[id].push(core.updateTime)
+          timer[id].push(core.updateTime);
         if (timer[id].length > (1000 / updateTime)) { //If we stored more than one second of history
           timer[id].splice(0, 1); //Remove Oldest
         }
